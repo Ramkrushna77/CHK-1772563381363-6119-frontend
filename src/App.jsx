@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProfileCreationPage from './pages/ProfileCreationPage';
 import AssessmentPage from './pages/AssessmentPage';
+import ReportPage from './pages/ReportPage';
 
 function App() {
     return (
@@ -14,6 +15,7 @@ function App() {
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/profile-creation" element={<ProfileCreationPage />} />
                 <Route path="/assessment" element={<AssessmentPage />} />
+                <Route path="/report" element={<ReportPage />} />
                 {/* Additional routes will be added here */}
             </Routes>
         </BrowserRouter>
