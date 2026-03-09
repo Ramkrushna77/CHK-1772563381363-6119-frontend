@@ -1,14 +1,15 @@
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
 
 function App() {
-  return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <h1 className="text-4xl font-bold text-primary-600 mb-4">MindCare AI</h1>
-        <p className="text-lg text-slate-600">Tailwind CSS and Routing setup complete.</p>
-      </div>
-    </BrowserRouter>
-  );
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<LandingPage />} />
+                {/* Additional routes will be added here */}
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
 export default App;
