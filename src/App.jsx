@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProfileCreationPage from './pages/ProfileCreationPage';
+import AssessmentPage from './pages/AssessmentPage';
 
 function App() {
     return (
@@ -12,6 +13,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/profile-creation" element={<ProfileCreationPage />} />
+                <Route path="/assessment" element={<AssessmentPage />} />
                 {/* Additional routes will be added here */}
             </Routes>
         </BrowserRouter>
