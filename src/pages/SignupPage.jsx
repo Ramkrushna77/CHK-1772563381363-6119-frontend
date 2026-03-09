@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrainCircuit, Mail, Lock, User, Phone } from 'lucide-react';
+import { auth, db } from '../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function SignupPage() {
     const [formData, setFormData] = useState({
@@ -9,18 +12,38 @@ export default function SignupPage() {
         phone: '',
         password: ''
     });
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Simulate API call for signup
-        console.log('Signup attempt:', formData);
-        // After successful signup, redirect to patient profile creation (Step 3)
-        navigate('/profile-setup');
+        setError('');
+        setLoading(true);
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+            const user = userCredential.user;
+
+            // Save additional user data to Firestore
+            await setDoc(doc(db, "users", user.uid), {
+                fullName: formData.fullName,
+                email: formData.email,
+                phone: formData.phone,
+                createdAt: new Date()
+            });
+
+            console.log('Signup successful:', user.uid);
+            navigate('/profile-creation');
+        } catch (error) {
+            console.error("Error signing up:", error);
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -44,6 +67,7 @@ export default function SignupPage() {
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-2xl sm:px-10 border border-slate-100">
                     <form className="space-y-6" onSubmit={handleSubmit}>
+                        {error && <div className="p-3 bg-red-100 text-red-600 rounded-md text-sm">{error}</div>}
 
                         {/* Full Name */}
                         <div>
@@ -136,9 +160,10 @@ export default function SignupPage() {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                                disabled={loading}
+                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50"
                             >
-                                Create Account
+                                {loading ? 'Creating...' : 'Create Account'}
                             </button>
                         </div>
                     </form>

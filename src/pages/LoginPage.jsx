@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrainCircuit, Mail, Lock, Mic, Phone } from 'lucide-react';
+import { auth } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
     const [formData, setFormData] = useState({
@@ -9,6 +11,8 @@ export default function LoginPage() {
     });
     const [usePhone, setUsePhone] = useState(false);
     const [isListening, setIsListening] = useState(false);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -53,13 +57,24 @@ export default function LoginPage() {
         recognition.start();
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Simulate API call for login
-        console.log('Login attempt:', formData);
-        // After successful login, redirect to dashboard or profile creation
-        // Assuming user is already set up for now, pointing to a placeholder dashboard
-        navigate('/dashboard');
+        setError('');
+        setLoading(true);
+        // Firebase Auth natively uses Email/Password matching primarily. 
+        // For phone numbers you usually need OTP, so we support email login here or fake phone string.
+        const email = usePhone && !formData.identifier.includes('@') ? `${formData.identifier.replace(/[^0-9]/g, '')}@phone.placeholder.com` : formData.identifier;
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, formData.password);
+            console.log('Login successful:', userCredential.user.uid);
+            navigate('/dashboard');
+        } catch (error) {
+            console.error("Error signing in:", error);
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -83,6 +98,7 @@ export default function LoginPage() {
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-2xl sm:px-10 border border-slate-100">
                     <form className="space-y-6" onSubmit={handleSubmit}>
+                        {error && <div className="p-3 bg-red-100 text-red-600 rounded-md text-sm">{error}</div>}
 
                         {/* Toggle Email/Phone */}
                         <div className="flex justify-end">
@@ -175,9 +191,10 @@ export default function LoginPage() {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                                disabled={loading}
+                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50"
                             >
-                                Sign in
+                                {loading ? 'Signing in...' : 'Sign in'}
                             </button>
                         </div>
                     </form>
