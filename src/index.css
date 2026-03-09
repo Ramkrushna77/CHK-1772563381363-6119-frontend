@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-500: #0047FF;
+  --color-primary-600: #0036CC;
+  --color-primary-700: #002BB3;
+  --color-purple-500: #6200EA;
+  --color-purple-600: #4B00B4;
+  --color-success-500: #00C853;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-slate-900 font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/90 backdrop-blur-md shadow-xl border border-white/20;
+  }
+}
