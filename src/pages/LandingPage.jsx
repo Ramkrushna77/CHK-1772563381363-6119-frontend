@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Activity, MessageSquare, FileText, CheckCircle2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { User } from 'lucide-react'; 
 
 export default function LandingPage() {
     return (
@@ -43,27 +44,53 @@ export default function LandingPage() {
                                     <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-300"></div>
                                     <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-400"></div>
                                 </div>
-                                <p>Joined by <strong className="text-slate-900">10,000+</strong> users this month</p>
+                               
                             </div>
                         </div>
 
                         <div className="relative relative-container rounded-3xl overflow-hidden shadow-2xl h-[600px] w-full bg-slate-200">
-                            {/* Placeholder for the doctor working on tablet image */}
-                            <img src="https://images.unsplash.com/photo-1576091160550-2173ff9e5fe3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Doctor using tablet" className="w-full h-full object-cover" />
+                            {/* Doctor image */}
+                            <img src="https://images.pexels.com/photos/5215024/pexels-photo-5215024.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Doctor using tablet" className="w-full h-full object-cover object-center" />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
 
                             {/* Floating Card */}
-                            <div className="absolute bottom-6 left-6 right-6">
-                                <div className="glass-panel rounded-2xl p-6 flex items-start gap-4">
-                                    <div className="bg-green-100 p-2 rounded-lg">
-                                        <CheckCircle2 className="h-6 w-6 text-green-600" />
+                            
+                        </div>
+                    </div>
+                </section>
+
+                {/* About Section */}
+                <section id="about" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 bg-white rounded-3xl shadow-sm border border-slate-100 my-12">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <h2 className="text-primary-600 font-semibold tracking-wide uppercase text-sm mb-3">About Our Platform</h2>
+                            <h3 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">Democratizing Mental Health Assessment</h3>
+                            <p className="text-lg text-slate-600 mb-6">
+                                MindCare AI bridges the gap between individuals seeking mental health clarity and professional-grade diagnostic tools. By combining standardized psychiatric questionnaires with advanced facial emotion recognition, our platform provides a comprehensive preliminary assessment from the comfort of your home.
+                            </p>
+                            <ul className="space-y-4">
+                                <li className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
                                     </div>
-                                    <div>
-                                        <h4 className="font-semibold text-slate-900">HIPAA Compliant</h4>
-                                        <p className="text-sm text-slate-600 mt-1">Your data is encrypted and secure.</p>
+                                    <p className="text-slate-700"><strong>Accessible:</strong> Available 24/7 without the need for immediate appointments.</p>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
                                     </div>
-                                </div>
-                            </div>
+                                    <p className="text-slate-700"><strong>Private:</strong> Your data is processed securely and anonymously.</p>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                    </div>
+                                    <p className="text-slate-700"><strong>Insightful:</strong> Receive detailed reports to share with your healthcare provider.</p>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="relative h-96 rounded-2xl overflow-hidden shadow-lg">
+                            <img src="https://images.pexels.com/photos/7176026/pexels-photo-7176026.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Therapy session" className="w-full h-full object-cover" />
                         </div>
                     </div>
                 </section>
@@ -149,4 +176,4 @@ function FeatureCard({ icon, iconBg, title, description, linkText, linkUrl }) {
     );
 }
 
-import { User } from 'lucide-react'; // Added missing import at button
+
