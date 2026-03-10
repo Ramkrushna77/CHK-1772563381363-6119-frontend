@@ -4,12 +4,13 @@ import ChatHeader from '../components/ChatHeader';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import SuggestedPrompts from '../components/SuggestedPrompts';
+import { Bot, Sparkles, ShieldCheck, Heart } from 'lucide-react';
 
 const ChatbotPage = () => {
     const [messages, setMessages] = useState([
         {
             id: 1,
-            text: "Hello! I'm your Mental Health Assistant. I'm here to provide a safe space for you to talk. How are you feeling today?",
+            text: "Hello! I'm your MindCare Assistant. I'm here to provide a safe space for you to talk. How are you feeling today?",
             isAI: true,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
@@ -68,9 +69,6 @@ const ChatbotPage = () => {
 
         // Simulate AI Response with Axios (mocking)
         try {
-            // In a real app, you might call an LLM API here
-            // const response = await axios.post('/api/chat', { message: text });
-
             setTimeout(() => {
                 const aiResponse = generateSimpleResponse(text);
                 const botMessage = {
@@ -110,60 +108,97 @@ const ChatbotPage = () => {
 
     const handleVoiceResult = (transcript) => {
         setInputText(transcript);
-        // Optionally auto-send voice transcript
-        // handleSend(transcript);
+        handleSend(transcript);
     };
 
     return (
-        <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
-            <ChatHeader />
+        <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans relative selection:bg-primary-100 italic-text-none">
+            {/* Ambient Premium Glows */}
+            <div className="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary-200/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+            <div className="fixed bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-200/20 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDelay: '1s' }}></div>
 
-            <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 max-w-4xl mx-auto w-full scrollbar-thin scrollbar-thumb-slate-200">
-                {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4 opacity-60">
-                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
-                            <Bot size={32} />
-                        </div>
-                        <p className="text-sm font-medium">Start a conversation with your assistant</p>
-                    </div>
-                ) : (
-                    <>
-                        {messages.map((msg) => (
-                            <ChatMessage
-                                key={msg.id}
-                                message={msg.text}
-                                isAI={msg.isAI}
-                                timestamp={msg.timestamp}
-                            />
-                        ))}
-                        {isTyping && (
-                            <div className="flex justify-start mb-6 animate-pulse">
-                                <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-bl-sm shadow-sm flex gap-1">
-                                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"></span>
-                                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
-                                </div>
-                            </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </>
-                )}
-            </main>
-
-            <footer className="bg-white border-t border-slate-100 p-4 sticky bottom-0 z-10">
-                <div className="max-w-4xl mx-auto w-full">
-                    <SuggestedPrompts onPromptClick={(prompt) => handleSend(prompt)} />
-                    <ChatInput
-                        value={inputText}
-                        onChange={setInputText}
-                        onSend={() => handleSend()}
-                        onVoiceResult={handleVoiceResult}
-                    />
-                    <p className="text-[10px] text-center text-slate-400 mt-3 font-medium tracking-tight">
-                        Our assistant is here to support you, but it is not a substitute for professional medical advice.
-                    </p>
+            <div className="relative z-10 flex flex-col h-full max-w-5xl mx-auto w-full px-4 py-4 md:py-8">
+                {/* Header Container - Glass effect */}
+                <div className="glass-panel rounded-[2.5rem] mb-6 overflow-hidden premium-glow">
+                    <ChatHeader />
                 </div>
-            </footer>
+
+                {/* Messages Area */}
+                <main className="flex-1 overflow-y-auto px-4 md:px-6 py-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                    {messages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-6 opacity-80 animate-in fade-in zoom-in duration-700">
+                            <div className="w-24 h-24 bg-white rounded-[2rem] flex items-center justify-center shadow-xl border border-white/50">
+                                <Bot size={48} className="text-primary-600" />
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-xl font-bold text-slate-800">Your Calm Space</h3>
+                                <p className="text-sm font-medium mt-1">Start a conversation with your MindCare assistant</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {/* Feature Indicators */}
+                            <div className="flex items-center justify-center gap-4 mb-8">
+                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white/50 px-3 py-1.5 rounded-full border border-white/50">
+                                    <ShieldCheck size={12} className="text-emerald-500" /> End-to-End Private
+                                </span>
+                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white/50 px-3 py-1.5 rounded-full border border-white/50">
+                                    <Heart size={12} className="text-rose-500" /> Empathetic AI
+                                </span>
+                            </div>
+
+                            {messages.map((msg) => (
+                                <ChatMessage
+                                    key={msg.id}
+                                    message={msg.text}
+                                    isAI={msg.isAI}
+                                    timestamp={msg.timestamp}
+                                />
+                            ))}
+                            {isTyping && (
+                                <div className="flex justify-start mb-10 animate-in fade-in slide-in-from-left-2 duration-300">
+                                    <div className="bg-white/80 backdrop-blur-sm border border-slate-100 p-5 rounded-[2rem] rounded-bl-none shadow-sm flex gap-1.5 items-center">
+                                        <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce [animation-duration:800ms]"></span>
+                                        <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce [animation-duration:800ms] [animation-delay:150ms]"></span>
+                                        <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce [animation-duration:800ms] [animation-delay:300ms]"></span>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+                    )}
+                </main>
+
+                {/* Footer Container - Glass effect */}
+                <footer className="mt-4 px-4 pb-4 md:px-0 md:pb-0">
+                    <div className="backdrop-blur-2xl bg-white/80 border border-white/40 p-6 rounded-[2.5rem] shadow-2xl shadow-slate-300/40 relative overflow-hidden group">
+                        {/* Interactive Suggestion Label */}
+                        <div className="flex items-center gap-2 mb-4 px-1">
+                            <div className="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center">
+                                <Sparkles size={14} className="text-primary-600 animate-pulse" />
+                            </div>
+                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] transition-colors group-hover:text-primary-600">
+                                Personalized Suggestions
+                            </span>
+                        </div>
+
+                        <div className="max-w-4xl mx-auto w-full">
+                            <SuggestedPrompts onPromptClick={(prompt) => handleSend(prompt)} />
+                            <div className="mt-5">
+                                <ChatInput
+                                    value={inputText}
+                                    onChange={setInputText}
+                                    onSend={() => handleSend()}
+                                    onVoiceResult={handleVoiceResult}
+                                />
+                            </div>
+                            <p className="text-[10px] text-center text-slate-400 mt-4 font-bold uppercase tracking-wider opacity-60">
+                                Safe & Secure AI Support • Always here to listen
+                            </p>
+                        </div>
+                    </div>
+                </footer>
+            </div>
         </div>
     );
 };
