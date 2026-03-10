@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { BrainCircuit, Activity, FileText, Calendar, Download, ChevronRight, MessageSquare } from 'lucide-react';
+import { BrainCircuit, Activity, FileText, Calendar, Download, ChevronRight, MessageSquare, Mic } from 'lucide-react';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
@@ -100,6 +100,29 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     ))}
+                </div>
+
+                {/* Voice Response Section */}
+                <div className="bg-gradient-to-br from-purple-50 to-primary-50 rounded-2xl p-8 border border-purple-100 shadow-sm mb-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-100 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600 to-primary-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-200 group-hover:rotate-3 transition-transform">
+                        <Mic size={32} />
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                        <h2 className="text-2xl font-bold text-slate-900">Voice Assessment</h2>
+                        <p className="text-slate-600 mt-2 max-w-xl">
+                            Express yourself naturally with voice. Our AI will listen and analyze your speech patterns 
+                            to provide personalized mental health insights.
+                        </p>
+                    </div>
+                    <div>
+                        <button
+                            onClick={() => navigate('/voice-response')}
+                            className="bg-gradient-to-r from-purple-600 to-primary-600 text-white px-8 py-3.5 rounded-xl font-bold hover:shadow-lg transition-all shadow-md active:scale-95 flex items-center gap-2"
+                        >
+                            Start Voice Assessment <ChevronRight size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Assistant Embedded Section */}

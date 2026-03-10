@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useRef } from 'react';
+import { Bot } from 'lucide-react';
 import ChatHeader from '../components/ChatHeader';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import SuggestedPrompts from '../components/SuggestedPrompts';
+import { sendMessage } from '../services/api';
 
 const ChatbotPage = () => {
     const [messages, setMessages] = useState([
@@ -16,6 +17,7 @@ const ChatbotPage = () => {
     ]);
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [error, setError] = useState('');
     const messagesEndRef = useRef(null);
 
     // Crisis keywords for safety feature
@@ -49,6 +51,7 @@ const ChatbotPage = () => {
 
         setMessages(prev => [...prev, userMessage]);
         setInputText('');
+        setError('');
         setIsTyping(true);
 
         // Safety Feature Check
@@ -66,46 +69,29 @@ const ChatbotPage = () => {
             return;
         }
 
-        // Simulate AI Response with Axios (mocking)
         try {
-            // In a real app, you might call an LLM API here
-            // const response = await axios.post('/api/chat', { message: text });
-
-            setTimeout(() => {
-                const aiResponse = generateSimpleResponse(text);
-                const botMessage = {
-                    id: Date.now() + 2,
-                    text: aiResponse,
-                    isAI: true,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                };
-                setMessages(prev => [...prev, botMessage]);
-                setIsTyping(false);
-            }, 1500);
+            const response = await sendMessage(text);
+            const botMessage = {
+                id: Date.now() + 2,
+                text: response?.answer || "I'm here with you. Please share more if you'd like.",
+                isAI: true,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, botMessage]);
         } catch (error) {
             console.error("Error sending message:", error);
+            setError(error.message || 'Could not reach backend chat service.');
+
+            const fallbackMessage = {
+                id: Date.now() + 2,
+                text: 'I am unable to connect right now. Please try again shortly.',
+                isAI: true,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, fallbackMessage]);
+        } finally {
             setIsTyping(false);
         }
-    };
-
-    const generateSimpleResponse = (text) => {
-        const lowerText = text.toLowerCase();
-        if (lowerText.includes('stress') || lowerText.includes('pressure')) {
-            return "It sounds like you're carrying a lot right now. Remember to take small breaks and breathe. Would you like to try a 1-minute breathing exercise?";
-        }
-        if (lowerText.includes('anxiety') || lowerText.includes('anxious') || lowerText.includes('panic')) {
-            return "I hear that you're feeling anxious. Try the 5-4-3-2-1 grounding technique: Name 5 things you can see, 4 things you can touch, 3 things you can hear, 2 things you can smell, and 1 thing you can taste.";
-        }
-        if (lowerText.includes('sleep') || lowerText.includes('insomnia') || lowerText.includes('tired')) {
-            return "Sleep struggles can really impact your mood. Try keeping your room cool and dark, and avoid screens for 30 minutes before bed. Have you tried listening to calming white noise?";
-        }
-        if (lowerText.includes('sad') || lowerText.includes('depressed') || lowerText.includes('lonely')) {
-            return "I'm sorry you're feeling this way. It's okay to sit with these feelings, but please know you're not alone. Talking about it is a brave first step.";
-        }
-        if (lowerText.includes('relax') || lowerText.includes('calm')) {
-            return "Relaxation is a skill we can practice. Close your eyes for a moment, drop your shoulders, and relax your jaw. How does that feel?";
-        }
-        return "Thank you for sharing that with me. I'm here to listen. Can you tell me more about how that's been affecting you lately?";
     };
 
     const handleVoiceResult = (transcript) => {
@@ -119,6 +105,11 @@ const ChatbotPage = () => {
             <ChatHeader />
 
             <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 max-w-4xl mx-auto w-full scrollbar-thin scrollbar-thumb-slate-200">
+                {error && (
+                    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        {error}
+                    </div>
+                )}
                 {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4 opacity-60">
                         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">

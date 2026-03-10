@@ -4,6 +4,7 @@ import { Mic, ChevronRight, ChevronLeft, Camera, Activity, MicOff, AlertCircle }
 import * as faceapi from 'face-api.js';
 import { auth, db } from '../firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { detectEmotion, analyzeSpeech } from '../services/api';
 
 const QUESTIONS = [
     { id: 'q1', text: 'How often do you feel anxious or overwhelmed?', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Constantly'] },
@@ -31,6 +32,8 @@ export default function AssessmentPage() {
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
     const intervalRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
 
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState({});
@@ -39,6 +42,13 @@ export default function AssessmentPage() {
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [emotionLoading, setEmotionLoading] = useState(false);
+    const [emotionError, setEmotionError] = useState('');
+    const [speechEmotion, setSpeechEmotion] = useState('Not analyzed');
+    const [speechConfidence, setSpeechConfidence] = useState(null);
+    const [speechLoading, setSpeechLoading] = useState(false);
+    const [speechError, setSpeechError] = useState('');
+    const [isRecordingAudio, setIsRecordingAudio] = useState(false);
 
     const progress = ((currentQuestion + 1) / QUESTIONS.length) * 100;
 
@@ -139,6 +149,86 @@ export default function AssessmentPage() {
         setAnswers(prev => ({ ...prev, [QUESTIONS[currentQuestion].id]: option }));
     };
 
+    const captureEmotionForBackend = async () => {
+        if (!videoRef.current || videoRef.current.readyState !== 4) {
+            setEmotionError('Camera is not ready yet. Please wait a moment and try again.');
+            return;
+        }
+
+        try {
+            setEmotionLoading(true);
+            setEmotionError('');
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = videoRef.current.videoWidth || 640;
+            tempCanvas.height = videoRef.current.videoHeight || 480;
+
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(videoRef.current, 0, 0, tempCanvas.width, tempCanvas.height);
+
+            const imageBlob = await new Promise((resolve) => {
+                tempCanvas.toBlob(resolve, 'image/jpeg', 0.92);
+            });
+
+            if (!imageBlob) {
+                throw new Error('Could not capture image from camera.');
+            }
+
+            const result = await detectEmotion(imageBlob);
+            if (result?.emotion) {
+                setDetectedEmotion(result.emotion);
+            }
+        } catch (error) {
+            setEmotionError(error.message || 'Failed to analyze facial emotion.');
+        } finally {
+            setEmotionLoading(false);
+        }
+    };
+
+    const startAudioRecording = async () => {
+        try {
+            setSpeechError('');
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            recorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                stream.getTracks().forEach(track => track.stop());
+
+                try {
+                    setSpeechLoading(true);
+                    const result = await analyzeSpeech(audioBlob);
+                    setSpeechEmotion(result?.emotion || 'Unknown');
+                    setSpeechConfidence(result?.confidence ?? null);
+                } catch (error) {
+                    setSpeechError(error.message || 'Failed to analyze speech emotion.');
+                } finally {
+                    setSpeechLoading(false);
+                }
+            };
+
+            mediaRecorderRef.current = recorder;
+            recorder.start();
+            setIsRecordingAudio(true);
+        } catch {
+            setSpeechError('Microphone access denied or unavailable.');
+        }
+    };
+
+    const stopAudioRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecordingAudio(false);
+    };
+
     const handleNext = async () => {
         if (currentQuestion < QUESTIONS.length - 1) {
             setCurrentQuestion(c => c + 1);
@@ -149,6 +239,7 @@ export default function AssessmentPage() {
             const assessmentData = {
                 answers,
                 dominantEmotion: detectedEmotion,
+                speechEmotion,
                 completedAt: new Date().toISOString(),
                 userId: user?.uid || 'anonymous',
             };
@@ -160,7 +251,13 @@ export default function AssessmentPage() {
                 console.error('Failed to save assessment:', e);
             }
             // Pass data via navigation state
-            navigate('/report', { state: { answers, emotion: detectedEmotion } });
+            navigate('/report', {
+                state: {
+                    answers,
+                    emotion: detectedEmotion,
+                    speechEmotion,
+                }
+            });
         }
     };
 
@@ -282,10 +379,48 @@ export default function AssessmentPage() {
                         </span>
                     </div>
 
+                    <button
+                        onClick={captureEmotionForBackend}
+                        disabled={emotionLoading || !!cameraError}
+                        className="w-full rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {emotionLoading ? 'Analyzing face...' : 'Capture And Analyze Face'}
+                    </button>
+                    {emotionError && <p className="text-xs text-red-400">{emotionError}</p>}
+
+                    <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-4 text-sm">
+                        <div className="mb-2 flex items-center justify-between">
+                            <span className="text-slate-400">Speech emotion</span>
+                            <span className="font-bold uppercase text-emerald-300">{speechEmotion}</span>
+                        </div>
+                        {speechConfidence !== null && (
+                            <p className="text-xs text-slate-400">Confidence: {(speechConfidence * 100).toFixed(1)}%</p>
+                        )}
+                        <div className="mt-3 flex gap-2">
+                            {!isRecordingAudio ? (
+                                <button
+                                    onClick={startAudioRecording}
+                                    disabled={speechLoading}
+                                    className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
+                                >
+                                    {speechLoading ? 'Processing...' : 'Start Voice Recording'}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={stopAudioRecording}
+                                    className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+                                >
+                                    Stop And Analyze
+                                </button>
+                            )}
+                        </div>
+                        {speechError && <p className="mt-2 text-xs text-red-400">{speechError}</p>}
+                    </div>
+
                     {/* Disclaimer */}
                     <div className="flex items-start gap-2 text-xs text-slate-500">
                         <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                        <p>Video is processed locally and is never uploaded. This does not constitute a medical diagnosis.</p>
+                        <p>Assessment media is analyzed for emotional cues and is not a medical diagnosis.</p>
                     </div>
                 </div>
 

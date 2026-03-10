@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BrainCircuit, AlertTriangle, CheckCircle, Activity, ChevronRight, RotateCcw, MessageSquare, Bot, Circle } from 'lucide-react';
+import { generateReport } from '../services/api';
+import PrescriptionReport from '../components/PrescriptionReport';
 
 // Simple scoring logic based on answers
 function analyzeResults(answers, emotion) {
@@ -30,24 +32,31 @@ export default function ReportPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const [showReport, setShowReport] = useState(false);
+    const [backendReport, setBackendReport] = useState(null);
+    const [reportError, setReportError] = useState('');
 
-    const { answers = {}, emotion = 'Neutral' } = location.state || {};
+    const { answers = {}, emotion = 'Neutral', speechEmotion = 'neutral' } = location.state || {};
     const result = analyzeResults(answers, emotion);
 
-    const tips = [
-        'Practice deep breathing or meditation for 10 minutes daily.',
-        'Maintain a consistent sleep schedule — aim for 7–9 hours.',
-        'Exercise at least 3 times per week.',
-        'Limit screen time 1 hour before bed.',
-        'Stay connected with supportive friends and family.',
-        'Journaling your thoughts daily can reduce anxiety.',
-    ];
-
     useEffect(() => {
-        // Simulate AI report generation delay
-        const timer = setTimeout(() => setShowReport(true), 2200);
-        return () => clearTimeout(timer);
-    }, []);
+        const fetchReport = async () => {
+            try {
+                setReportError('');
+                const report = await generateReport({
+                    face_emotion: emotion || 'neutral',
+                    speech_emotion: speechEmotion || 'neutral',
+                    sentiment: result.riskLevel === 'Low' ? 'POSITIVE' : 'NEGATIVE',
+                });
+                setBackendReport(report);
+            } catch (error) {
+                setReportError(error.message || 'Failed to generate backend report.');
+            } finally {
+                setShowReport(true);
+            }
+        };
+
+        fetchReport();
+    }, [emotion, speechEmotion, result.riskLevel]);
 
     if (!showReport) {
         return (
@@ -56,7 +65,7 @@ export default function ReportPage() {
                     <BrainCircuit className="w-16 h-16 text-primary-400 mx-auto animate-pulse" />
                     <div>
                         <h2 className="text-2xl font-bold">Analyzing your responses...</h2>
-                        <p className="text-slate-400 mt-2 text-sm">Our AI is generating your personalized mental health report.</p>
+                        <p className="text-slate-400 mt-2 text-sm">Our AI is generating your personalized mental health report with chatbot analysis.</p>
                     </div>
                     <div className="flex justify-center gap-2">
                         {[...Array(5)].map((_, i) => (
@@ -68,42 +77,33 @@ export default function ReportPage() {
         );
     }
 
-    const riskBg = {
-        emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700',
-        amber: 'bg-amber-50 border-amber-200 text-amber-700',
-        orange: 'bg-orange-50 border-orange-200 text-orange-700',
-        red: 'bg-red-50 border-red-200 text-red-700',
-    }[result.riskColor];
-
-    const stressBg = {
-        emerald: 'bg-emerald-500',
-        amber: 'bg-amber-500',
-        orange: 'bg-orange-500',
-        red: 'bg-red-500',
-    }[result.stressColor];
-
     return (
         <div className="min-h-screen bg-slate-50 py-12 px-4">
-            <div className="max-w-3xl mx-auto space-y-8">
+            <div className="max-w-4xl mx-auto space-y-8">
                 {/* Header */}
                 <div className="text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 mb-4">
                         <BrainCircuit className="w-8 h-8 text-primary-600" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-slate-900">Your Mental Health Report</h1>
-                    <p className="text-slate-500 mt-2 text-sm">Generated on {new Date().toLocaleDateString('en-US', { dateStyle: 'long' })}</p>
+                    <p className="text-slate-500 mt-2 text-sm">Formatted prescription-style report with AI-powered recommendations for your wellness journey</p>
                 </div>
 
                 {/* Risk & Stress Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Risk Level */}
-                    <div className={`rounded-2xl p-6 border-2 ${riskBg}`}>
+                    <div className={`rounded-2xl p-6 border-2 ${
+                        result.riskColor === 'emerald' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                        result.riskColor === 'amber' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                        result.riskColor === 'orange' ? 'bg-orange-50 border-orange-200 text-orange-700' :
+                        'bg-red-50 border-red-200 text-red-700'
+                    }`}>
                         <div className="flex items-center gap-3 mb-3">
                             <AlertTriangle className="w-6 h-6" />
                             <h3 className="font-bold text-lg">Risk Level</h3>
                         </div>
                         <p className="text-4xl font-extrabold">{result.riskLevel}</p>
-                        <p className="text-sm mt-1 opacity-75">Based on your questionnaire responses and emotional analysis.</p>
+                        <p className="text-sm mt-1 opacity-75">Based on comprehensive assessment.</p>
                     </div>
 
                     {/* Stress Level */}
@@ -114,37 +114,43 @@ export default function ReportPage() {
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-4 mb-2">
                             <div
-                                className={`h-4 rounded-full transition-all duration-1000 ${stressBg}`}
+                                className={`h-4 rounded-full transition-all duration-1000 ${
+                                    result.stressColor === 'emerald' ? 'bg-emerald-500' :
+                                    result.stressColor === 'amber' ? 'bg-amber-500' :
+                                    result.stressColor === 'orange' ? 'bg-orange-500' :
+                                    'bg-red-500'
+                                }`}
                                 style={{ width: `${result.score}%` }}
                             />
                         </div>
                         <div className="flex justify-between text-sm text-slate-500">
                             <span>{result.stressLabel} ({result.score}%)</span>
-                            <span>Detected emotion: <strong>{emotion}</strong></span>
+                            <span>Emotion: <strong>{emotion}</strong></span>
                         </div>
                     </div>
                 </div>
 
-                {/* Summary */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                    <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-primary-600" /> Assessment Summary
-                    </h3>
-                    <ul className="space-y-3">
-                        {Object.entries(answers).map(([qId, answer], i) => (
-                            <li key={qId} className="flex justify-between py-2 border-b border-slate-50 text-sm">
-                                <span className="text-slate-500">Q{i + 1}</span>
-                                <span className="font-medium text-slate-800">{answer}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+                {/* NEW: Prescription-Style Report with PDF and Chatbot Analysis */}
+                <PrescriptionReport
+                    answers={answers}
+                    emotion={emotion}
+                    speechEmotion={speechEmotion}
+                    result={result}
+                    backendReport={backendReport}
+                />
 
                 {/* Wellness Tips */}
                 <div className="bg-gradient-to-br from-primary-50 to-emerald-50 rounded-2xl p-6 border border-primary-100">
-                    <h3 className="font-bold text-lg text-slate-900 mb-4">Mental Wellness Tips</h3>
+                    <h3 className="font-bold text-lg text-slate-900 mb-4">Daily Wellness Tips</h3>
                     <ul className="space-y-3">
-                        {tips.map((tip, i) => (
+                        {[
+                            'Practice deep breathing or meditation for 10 minutes daily.',
+                            'Maintain a consistent sleep schedule — aim for 7–9 hours.',
+                            'Exercise at least 3 times per week.',
+                            'Limit screen time 1 hour before bed.',
+                            'Stay connected with supportive friends and family.',
+                            'Journaling your thoughts daily can reduce anxiety.'
+                        ].map((tip, i) => (
                             <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
                                 <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 font-bold flex items-center justify-center shrink-0 mt-0.5 text-xs">{i + 1}</span>
                                 {tip}
@@ -194,7 +200,7 @@ export default function ReportPage() {
 
                             <div className="space-y-4 text-slate-700 leading-relaxed mb-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 italic">
                                 {result.riskLevel === 'Severe' || result.riskLevel === 'High' ? (
-                                    <p>"I can see you're going through a very difficult time. It's important to remember that you don't have to carry this alone. I'm here to listen right now, and I highly recommend speaking with one of our specialized professionals who can offer the deep Support you deserve."</p>
+                                    <p>"I can see you're going through a very difficult time. It's important to remember that you don't have to carry this alone. I'm here to listen right now, and I highly recommend speaking with one of our specialized professionals who can offer the deep support you deserve."</p>
                                 ) : result.riskLevel === 'Moderate' ? (
                                     <p>"You've been under a fair amount of pressure lately. Let's work together on some grounding exercises and stress management techniques. Talking through these feelings can prevent them from becoming overwhelming."</p>
                                 ) : (

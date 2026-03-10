@@ -13,6 +13,7 @@ export default function Navbar() {
 
                     <div className="hidden md:flex items-center gap-8">
                         <a href="#assessments" className="text-sm font-medium text-slate-700 hover:text-primary-600 transition-colors">Assessments</a>
+                        <Link to="/voice-response" className="text-sm font-medium text-slate-700 hover:text-primary-600 transition-colors">Voice Assessment</Link>
                         <a href="#features" className="text-sm font-medium text-slate-700 hover:text-primary-600 transition-colors">Features</a>
                         <a href="#resources" className="text-sm font-medium text-slate-700 hover:text-primary-600 transition-colors">Resources</a>
                         <a href="#about" className="text-sm font-medium text-slate-700 hover:text-primary-600 transition-colors">About</a>

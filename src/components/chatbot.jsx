@@ -4,6 +4,7 @@ import ChatHeader from './ChatHeader';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import SuggestedPrompts from './SuggestedPrompts';
+import { sendMessage } from '../services/api';
 
 export default function Chatbot() {
     const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +14,7 @@ export default function Chatbot() {
     ]);
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [error, setError] = useState('');
     const messagesEndRef = useRef(null);
 
     const crisisKeywords = ['suicide', 'kill myself', 'hurt myself', 'self harm', 'die', 'want to die'];
@@ -32,7 +34,7 @@ export default function Chatbot() {
         }
     }, [messages, isOpen, isTyping, isMinimized]);
 
-    const handleSend = (text = inputText) => {
+    const handleSend = async (text = inputText) => {
         if (!text.trim()) return;
 
         const userMsg = {
@@ -44,6 +46,7 @@ export default function Chatbot() {
 
         setMessages(prev => [...prev, userMsg]);
         setInputText('');
+        setError('');
         setIsTyping(true);
 
         // Crisis detection
@@ -61,26 +64,27 @@ export default function Chatbot() {
             return;
         }
 
-        // AI Response Simulation
-        setTimeout(() => {
-            const botResponse = generateResponse(text);
+        try {
+            const response = await sendMessage(text);
             const botMsg = {
                 id: Date.now() + 1,
-                text: botResponse,
+                text: response?.answer || 'I am here with you. Please tell me more.',
                 isAI: true,
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
             setMessages(prev => [...prev, botMsg]);
+        } catch (apiError) {
+            setError(apiError.message);
+            const fallback = {
+                id: Date.now() + 1,
+                text: 'I am having trouble reaching the backend right now. Please try again in a moment.',
+                isAI: true,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, fallback]);
+        } finally {
             setIsTyping(false);
-        }, 1500);
-    };
-
-    const generateResponse = (text) => {
-        const lower = text.toLowerCase();
-        if (lower.includes('stress')) return "I'm sorry you're stressed. Try taking 3 deep breaths and focusing on one small thing you can control right now.";
-        if (lower.includes('anxiety')) return "Anxiety can feel overwhelming. Grounding yourself with the 5-4-3-2-1 technique often helps. Would you like to try it?";
-        if (lower.includes('sleep')) return "Rest is crucial. Try avoiding screens and keeping your environment cool and quiet tonight.";
-        return "Thank you for sharing that. I'm here to support you. Tell me more about how that makes you feel.";
+        }
     };
 
     if (!isOpen) return null;
@@ -111,6 +115,11 @@ export default function Chatbot() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
+                {error && (
+                    <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                        {error}
+                    </div>
+                )}
                 {messages.map(msg => (
                     <ChatMessage key={msg.id} message={msg.text} isAI={msg.isAI} timestamp={msg.timestamp} />
                 ))}
