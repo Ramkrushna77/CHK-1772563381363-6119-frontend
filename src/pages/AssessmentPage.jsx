@@ -1,285 +1,298 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Mic, ChevronRight, ChevronLeft, Camera, Activity, MicOff, AlertCircle } from 'lucide-react';
 import * as faceapi from 'face-api.js';
-import { Mic, MicOff, ChevronRight, ChevronLeft, Activity } from 'lucide-react';
+import { auth, db } from '../firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
-const questions = [
-    { id: 1, text: "How often do you feel anxious?", options: ["Never", "Sometimes", "Often", "Always"] },
-    { id: 2, text: "How is your sleep quality?", options: ["Excellent", "Good", "Poor", "Terrible"] },
-    { id: 3, text: "Do you feel low or depressed frequently?", options: ["Never", "Rarely", "Sometimes", "Always"] },
-    { id: 4, text: "How would you rate your current stress level?", options: ["Low", "Moderate", "High", "Severe"] },
-    { id: 5, text: "How often do you find it difficult to concentrate?", options: ["Rarely", "Sometimes", "Often", "Always"] }
+const QUESTIONS = [
+    { id: 'q1', text: 'How often do you feel anxious or overwhelmed?', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Constantly'] },
+    { id: 'q2', text: 'How is your sleep quality recently?', options: ['Very Good', 'Good', 'Fair', 'Poor', 'Very Poor'] },
+    { id: 'q3', text: 'Do you feel low or depressed frequently?', options: ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'] },
+    { id: 'q4', text: 'How would you rate your ability to concentrate?', options: ['Excellent', 'Good', 'Fair', 'Poor', 'Very Poor'] },
+    { id: 'q5', text: 'Do you experience sudden mood swings?', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Very Often'] },
+    { id: 'q6', text: 'How is your appetite lately?', options: ['Normal', 'Slightly changed', 'Moderately changed', 'Significantly changed'] },
+    { id: 'q7', text: 'Do you feel socially withdrawn or isolated?', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
 ];
+
+const EMOTION_COLORS = {
+    happy: 'text-emerald-400',
+    neutral: 'text-blue-400',
+    sad: 'text-indigo-400',
+    angry: 'text-red-400',
+    fearful: 'text-amber-400',
+    disgusted: 'text-yellow-400',
+    surprised: 'text-purple-400',
+};
 
 export default function AssessmentPage() {
     const navigate = useNavigate();
-    // Questionnaire State
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const streamRef = useRef(null);
+    const intervalRef = useRef(null);
+
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState({});
-    const [isListening, setIsListening] = useState(false);
-
-    // Camera & Face API State
-    const videoRef = useRef(null);
+    const [detectedEmotion, setDetectedEmotion] = useState('Initializing...');
+    const [cameraError, setCameraError] = useState(null);
     const [modelsLoaded, setModelsLoaded] = useState(false);
-    const [emotion, setEmotion] = useState("Neutral");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
-    // Load Models
+    const progress = ((currentQuestion + 1) / QUESTIONS.length) * 100;
+
+    // Load face-api.js models
     useEffect(() => {
         const loadModels = async () => {
+            const MODEL_URL = '/models';
             try {
                 await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-                    faceapi.nets.faceExpressionNet.loadFromUri('/models')
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
                 ]);
                 setModelsLoaded(true);
-            } catch (err) {
-                console.warn("AI models failed to load. Continuing with fallback mode.", err);
-                // Set modelsLoaded to true anyway to allow the camera and assessment to work
-                setModelsLoaded(true);
+            } catch (error) {
+                console.warn('face-api models not found. Webcam emotion detection disabled.', error);
+                setModelsLoaded(false);
+                setDetectedEmotion('Models unavailable');
             }
         };
         loadModels();
     }, []);
 
-    // Setup Camera
+    // Start webcam
     useEffect(() => {
-        if (modelsLoaded) {
-            startVideo();
-        }
-    }, [modelsLoaded]);
-
-    const startVideo = () => {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then((stream) => {
+        const startCamera = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                streamRef.current = stream;
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
-            })
-            .catch((err) => {
-                console.error("error accessing webcam:", err);
-            });
-    };
-
-    const handleVideoPlay = () => {
-        setInterval(async () => {
-            if (videoRef.current && faceapi.nets.tinyFaceDetector.params) {
-                try {
-                    const detections = await faceapi.detectSingleFace(
-                        videoRef.current,
-                        new faceapi.TinyFaceDetectorOptions()
-                    ).withFaceExpressions();
-
-                    if (detections) {
-                        const expressions = detections.expressions;
-                        const dominantEmotion = Object.keys(expressions).reduce((a, b) => expressions[a] > expressions[b] ? a : b);
-                        setEmotion(dominantEmotion.charAt(0).toUpperCase() + dominantEmotion.slice(1));
-                    }
-                } catch (e) {
-                    console.debug("Analysis silent failure (expected in fallback)");
-                }
+            } catch (err) {
+                console.warn('Camera access denied:', err);
+                setCameraError('Camera access denied or unavailable. The questionnaire is still functional.');
+                setDetectedEmotion('Camera unavailable');
             }
-        }, 1000); // Check every second
-    };
+        };
+        startCamera();
 
-    const handleSpeechInput = () => {
+        return () => {
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(t => t.stop());
+            }
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, []);
+
+    // Run face detection loop when models are loaded
+    useEffect(() => {
+        if (!modelsLoaded) return;
+
+        intervalRef.current = setInterval(async () => {
+            if (!videoRef.current || videoRef.current.readyState !== 4) return;
+            try {
+                const detections = await faceapi
+                    .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceExpressions();
+
+                if (detections) {
+                    const expressions = detections.expressions;
+                    const dominant = Object.entries(expressions).sort((a, b) => b[1] - a[1])[0];
+                    setDetectedEmotion(dominant[0].charAt(0).toUpperCase() + dominant[0].slice(1));
+                } else {
+                    setDetectedEmotion('No face detected');
+                }
+            } catch (err) { // eslint-disable-line no-unused-vars
+                // Silently ignore detection errors
+            }
+        }, 1500);
+
+        return () => clearInterval(intervalRef.current);
+    }, [modelsLoaded]);
+
+    // Voice Input using Web Speech API
+    const handleVoiceInput = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            alert("Your browser doesn't support speech to text.");
+            alert('Voice input is not supported in your browser. Try Chrome.');
             return;
         }
         const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
+        recognition.lang = 'en-US';
         recognition.onstart = () => setIsListening(true);
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript.toLowerCase();
-
-            // Match transcript to options
-            const currentOptions = questions[currentQuestion].options;
-            const matchedOption = currentOptions.find(opt =>
-                transcript.includes(opt.toLowerCase())
-            );
-
-            if (matchedOption) {
-                handleAnswer(matchedOption);
-            } else {
-                alert(`Could not match "${transcript}" to an option. Please try again or click an option.`);
-            }
-            setIsListening(false);
-        };
-
-        recognition.onerror = () => setIsListening(false);
         recognition.onend = () => setIsListening(false);
-
+        recognition.onerror = () => setIsListening(false);
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.trim().toLowerCase();
+            const current = QUESTIONS[currentQuestion];
+            const matched = current.options.find(opt => transcript.includes(opt.toLowerCase()));
+            if (matched) {
+                setAnswers(prev => ({ ...prev, [current.id]: matched }));
+            }
+        };
         recognition.start();
     };
 
-    const handleAnswer = (option) => {
-        setAnswers(prev => ({
-            ...prev,
-            [questions[currentQuestion].id]: option
-        }));
+    const handleOptionSelect = (option) => {
+        setAnswers(prev => ({ ...prev, [QUESTIONS[currentQuestion].id]: option }));
     };
 
-    const handleNext = () => {
-        if (currentQuestion < questions.length - 1) {
-            setCurrentQuestion(prev => prev + 1);
+    const handleNext = async () => {
+        if (currentQuestion < QUESTIONS.length - 1) {
+            setCurrentQuestion(c => c + 1);
         } else {
-            submitAssessment();
+            // Submit assessment
+            setSubmitting(true);
+            const user = auth.currentUser;
+            const assessmentData = {
+                answers,
+                dominantEmotion: detectedEmotion,
+                completedAt: new Date().toISOString(),
+                userId: user?.uid || 'anonymous',
+            };
+            try {
+                if (user) {
+                    await addDoc(collection(db, 'assessments'), assessmentData);
+                }
+            } catch (e) {
+                console.error('Failed to save assessment:', e);
+            }
+            // Pass data via navigation state
+            navigate('/report', { state: { answers, emotion: detectedEmotion } });
         }
     };
 
-    const submitAssessment = () => {
-        setIsSubmitting(true);
-        // Simulate delay for AI Report Generation
-        setTimeout(() => {
-            // Pass assessment results and detected emotions to the report page
-            navigate('/report', {
-                state: {
-                    answers,
-                    finalEmotion: emotion
-                }
-            });
-        }, 3000);
+    const handlePrevious = () => {
+        if (currentQuestion > 0) setCurrentQuestion(c => c - 1);
     };
+
+    const emotionColorClass = EMOTION_COLORS[detectedEmotion.toLowerCase()] || 'text-slate-400';
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-            {/* LEFT SIDE: Questionnaire */}
-            <div className="w-full md:w-1/2 p-8 flex flex-col justify-center bg-white shadow-xl z-10">
-                <div className="max-w-md w-full mx-auto">
-                    {/* Progress Bar */}
+            {/* Left: Questionnaire */}
+            <div className="md:w-3/5 p-6 md:p-12 flex flex-col justify-center">
+                <div className="max-w-2xl mx-auto w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100">
+                    {/* Progress */}
                     <div className="mb-8">
-                        <div className="flex justify-between text-sm text-slate-500 mb-2">
-                            <span>Question {currentQuestion + 1} of {questions.length}</span>
-                            <span>{Math.round(((currentQuestion) / questions.length) * 100)}%</span>
+                        <div className="flex justify-between items-end mb-4">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-900">Mental Health Assessment</h2>
+                                <p className="text-slate-500 mt-1 text-sm">Answer honestly for the most accurate insights.</p>
+                            </div>
+                            <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+                                {currentQuestion + 1} / {QUESTIONS.length}
+                            </span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2.5">
                             <div
-                                className="bg-[#204E4A] h-2.5 rounded-full transition-all duration-500"
-                                style={{ width: `${((currentQuestion) / questions.length) * 100}%` }}
-                            ></div>
+                                className="bg-primary-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+                                style={{ width: `${progress}%` }}
+                            />
                         </div>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-slate-800 mb-6">
-                        {questions[currentQuestion].text}
-                    </h2>
-
-                    <div className="space-y-3 mb-8">
-                        {questions[currentQuestion].options.map((option, idx) => (
+                    {/* Question */}
+                    <div className="mb-8 min-h-[260px]">
+                        <h3 className="text-xl font-medium text-slate-800 mb-6 flex justify-between items-start gap-4">
+                            {QUESTIONS[currentQuestion].text}
                             <button
-                                key={idx}
-                                onClick={() => handleAnswer(option)}
-                                className={`w-full text-left px-6 py-4 rounded-xl border-2 transition-all ${answers[questions[currentQuestion].id] === option
-                                    ? 'border-[#204E4A] bg-[#EAF6F6] text-[#204E4A] font-semibold'
-                                    : 'border-slate-200 hover:border-[#BED6D3] text-slate-700'
-                                    }`}
+                                onClick={handleVoiceInput}
+                                title="Speak your answer"
+                                className={`p-2 rounded-full shrink-0 transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'text-slate-400 hover:text-primary-600 bg-slate-50 hover:bg-primary-50'}`}
                             >
-                                {option}
+                                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                             </button>
-                        ))}
+                        </h3>
+
+                        <div className="space-y-3">
+                            {QUESTIONS[currentQuestion].options.map((option, idx) => {
+                                const selected = answers[QUESTIONS[currentQuestion].id] === option;
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleOptionSelect(option)}
+                                        className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all duration-200 ${selected
+                                            ? 'border-primary-600 bg-primary-50 text-primary-700 font-semibold shadow-sm'
+                                            : 'border-slate-200 bg-white text-slate-700 hover:border-primary-300 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        {option}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    {/* Navigation */}
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-100">
                         <button
-                            onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
+                            onClick={handlePrevious}
                             disabled={currentQuestion === 0}
-                            className="flex items-center px-4 py-2 text-slate-500 hover:text-[#204E4A] disabled:opacity-30 transition-colors"
+                            className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         >
-                            <ChevronLeft className="w-5 h-5 mr-1" /> Back
+                            <ChevronLeft className="w-4 h-4 mr-1" /> Previous
                         </button>
-
-                        <button
-                            onClick={handleSpeechInput}
-                            title="Answer with voice"
-                            className={`p-3 rounded-full ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} transition-colors`}
-                        >
-                            {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                        </button>
-
                         <button
                             onClick={handleNext}
-                            disabled={!answers[questions[currentQuestion].id] || isSubmitting}
-                            className="flex items-center px-6 py-2 bg-[#204E4A] text-white rounded-lg hover:bg-[#153431] disabled:opacity-50 transition-colors"
+                            disabled={!answers[QUESTIONS[currentQuestion].id] || submitting}
+                            className="flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? 'Submitting...' : (currentQuestion === questions.length - 1 ? 'Finish' : 'Next')}
-                            {!isSubmitting && currentQuestion < questions.length - 1 && <ChevronRight className="w-5 h-5 ml-1" />}
+                            {submitting ? 'Submitting...' : currentQuestion === QUESTIONS.length - 1 ? 'Submit Assessment' : 'Next Question'}
+                            {!submitting && currentQuestion < QUESTIONS.length - 1 && <ChevronRight className="w-4 h-4 ml-1" />}
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* RIGHT SIDE: Camera Analysis */}
-            <div className="w-full md:w-1/2 bg-[#EAF6F6] p-8 flex flex-col items-center justify-center border-l border-[#BED6D3]">
-                <div className="max-w-md w-full text-center">
-                    <div className="mb-6 flex items-center justify-center space-x-2">
-                        <Activity className="text-[#204E4A] w-6 h-6" />
-                        <h3 className="text-xl font-semibold text-[#204E4A]">Live Emotion Analysis</h3>
+            {/* Right: Camera */}
+            <div className="md:w-2/5 bg-slate-900 border-l border-slate-800 flex flex-col text-white p-6 md:p-10 justify-center items-center relative overflow-hidden">
+                <div className="w-full max-w-sm space-y-5 z-10">
+                    <div className="text-center">
+                        <Activity className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                        <h3 className="text-lg font-bold">Live Emotion Analysis</h3>
+                        <p className="text-slate-400 text-xs mt-1">Facial expressions are analyzed in real-time during your assessment.</p>
                     </div>
 
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-slate-800 aspect-video mb-6">
-                        {!modelsLoaded ? (
-                            <div className="absolute inset-0 flex items-center justify-center text-white/70">
-                                <Spinner />
-                                <span className="ml-2">Initializing Camera...</span>
-                            </div>
-                        ) : (
-                            <>
-                                <video
-                                    ref={videoRef}
-                                    autoPlay
-                                    muted
-                                    onPlay={handleVideoPlay}
-                                    className="w-full h-full object-cover transform -scale-x-100" // Mirror effect
-                                />
-                                {(!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceExpressionNet.params) && (
-                                    <div className="absolute bottom-4 left-4 right-4 bg-orange-500/80 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs font-medium text-center">
-                                        Offline Analysis Mode (AI Models Unavailable)
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        {/* Emotion Overlay */}
-                        {modelsLoaded && (
-                            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-white/90 font-medium tracking-wide flex items-center">
-                                <span className={`w-2 h-2 rounded-full mr-2 ${getEmotionColor(emotion)}`}></span>
-                                {emotion}
+                    {/* Camera preview */}
+                    <div className="aspect-[4/3] bg-slate-800 rounded-2xl border border-slate-700 relative overflow-hidden shadow-2xl flex items-center justify-center">
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover rounded-2xl"
+                        />
+                        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+                        {cameraError && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800/90 p-4 text-center">
+                                <Camera className="w-10 h-10 opacity-40 mb-2" />
+                                <p className="text-xs text-slate-400">{cameraError}</p>
                             </div>
                         )}
                     </div>
 
-                    <p className="text-slate-600 text-sm max-w-sm mx-auto">
-                        Your camera is used locally for real-time facial analysis to better assess your current state. No video is recorded or sent to servers.
-                    </p>
+                    {/* Emotion badge */}
+                    <div className="bg-slate-800/80 backdrop-blur rounded-xl p-4 border border-slate-700 flex justify-between items-center text-sm">
+                        <span className="text-slate-400">Detected emotion</span>
+                        <span className={`font-bold tracking-wide uppercase ${emotionColorClass}`}>
+                            {detectedEmotion}
+                        </span>
+                    </div>
+
+                    {/* Disclaimer */}
+                    <div className="flex items-start gap-2 text-xs text-slate-500">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <p>Video is processed locally and is never uploaded. This does not constitute a medical diagnosis.</p>
+                    </div>
                 </div>
+
+                {/* Decorative blobs */}
+                <div className="absolute top-0 right-0 w-72 h-72 bg-primary-600/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl -translate-x-1/2 translate-y-1/2 pointer-events-none" />
             </div>
         </div>
     );
-}
-
-// Helper components
-function Spinner() {
-    return (
-        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-    );
-}
-
-function getEmotionColor(emotion) {
-    switch (emotion.toLowerCase()) {
-        case 'happy': return 'bg-green-400';
-        case 'sad': return 'bg-blue-400';
-        case 'angry': return 'bg-red-500';
-        case 'fearful': return 'bg-purple-500';
-        case 'disgusted': return 'bg-yellow-600';
-        case 'surprised': return 'bg-yellow-400';
-        default: return 'bg-slate-400'; // Neutral
-    }
 }
