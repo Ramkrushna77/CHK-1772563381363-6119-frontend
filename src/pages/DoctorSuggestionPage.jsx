@@ -1,166 +1,182 @@
-import { useNavigate } from 'react-router-dom';
-import {
-    UserCheck, BrainCircuit, Heart, ChevronRight,
-    Lightbulb, Phone, Star
-} from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { UserCheck, CheckCircle, ArrowLeft, PhoneCall, Calendar, Heart } from 'lucide-react';
 
-const specialists = [
-    {
-        type: 'Psychologist',
-        icon: <BrainCircuit className="w-7 h-7 text-violet-600" />,
-        bg: 'bg-violet-50',
-        border: 'border-violet-200',
-        description:
-            'Specializes in diagnosing and treating emotional and behavioural disorders through counselling and therapy without medication.',
-        suitableFor: ['Anxiety', 'Depression', 'Stress Management', 'Behavioural Issues'],
-        recommendation: 'Highly Recommended'
+const SUGGESTIONS = {
+    Low: {
+        specialist: 'General Wellness Counselor',
+        urgency: 'Routine',
+        urgencyColor: 'emerald',
+        message: 'Your mental health looks good! Regular self-care and mindfulness practices will help you maintain this balance.',
+        actions: [
+            'Practice daily mindfulness or meditation (10–15 min)',
+            'Maintain a regular sleep schedule (7–9 hours)',
+            'Keep a gratitude journal',
+            'Stay socially active with friends and family',
+            'Consider a monthly wellness check-in',
+        ],
+        tips: [
+            'Try yoga or light aerobic exercise 3x per week.',
+            'Limit caffeine and alcohol consumption.',
+            'Spend time in nature — even a 20-minute walk helps.',
+        ],
     },
-    {
-        type: 'Psychiatrist',
-        icon: <UserCheck className="w-7 h-7 text-blue-600" />,
-        bg: 'bg-blue-50',
-        border: 'border-blue-200',
-        description:
-            'A medical doctor who can prescribe medication alongside therapy for more severe mental health conditions.',
-        suitableFor: ['Severe Depression', 'Bipolar Disorder', 'Schizophrenia', 'Medication Management'],
-        recommendation: 'If symptoms persist'
+    Moderate: {
+        specialist: 'Licensed Counselor or Therapist',
+        urgency: 'Within a Month',
+        urgencyColor: 'amber',
+        message: 'You are experiencing mild to moderate stress. Speaking with a counselor can help you develop better coping strategies.',
+        actions: [
+            'Schedule an appointment with a therapist or counselor',
+            'Practice progressive muscle relaxation exercises',
+            'Identify and minimize stress triggers in your daily routine',
+            'Engage in a hobby or creative activity weekly',
+            'Consider joining a mental health support group',
+        ],
+        tips: [
+            'Cognitive Behavioral Therapy (CBT) is highly effective for moderate stress.',
+            'Apps like Calm or Headspace provide guided meditation.',
+            'Talk to someone you trust about how you are feeling.',
+        ],
     },
-    {
-        type: 'Counsellor',
-        icon: <Heart className="w-7 h-7 text-rose-500" />,
-        bg: 'bg-rose-50',
-        border: 'border-rose-200',
-        description:
-            'Provides professional guidance through life challenges, relationship issues, and mild mental health concerns.',
-        suitableFor: ['Life Transitions', 'Relationship Issues', 'Grief', 'Mild Stress'],
-        recommendation: 'Good Starting Point'
-    }
-];
-
-const wellnessTips = [
-    { title: 'Practice Mindfulness', desc: 'Take 10 minutes daily to meditate, focusing on your breath to ground yourself in the present moment.' },
-    { title: 'Prioritise Sleep', desc: 'Aim for 7–8 hours of quality sleep. Keep a consistent sleep schedule even on weekends.' },
-    { title: 'Stay Physically Active', desc: 'Even a 20-minute walk releases endorphins. Exercise is one of the most effective natural mood boosters.' },
-    { title: 'Connect with Others', desc: 'Reach out to friends or family. Social connection is a powerful buffer against stress and anxiety.' },
-    { title: 'Limit Screen Time', desc: 'Reduce exposure to news and social media, especially before bedtime, to improve mental clarity.' },
-    { title: 'Journaling', desc: 'Write down three things you are grateful for each day to shift focus towards positive experiences.' }
-];
+    High: {
+        specialist: 'Psychiatrist or Clinical Psychologist',
+        urgency: 'Within a Week',
+        urgencyColor: 'orange',
+        message: 'Your assessment indicates elevated stress and risk. Please seek professional help promptly.',
+        actions: [
+            'Book an appointment with a psychiatrist or psychologist this week',
+            'Inform a trusted family member or friend about your feelings',
+            'Reduce workload and practice daily stress relief routines',
+            'Avoid alcohol, tobacco, or any recreational substances',
+            'Establish an emergency support contact',
+        ],
+        tips: [
+            'Dialectical Behavior Therapy (DBT) can help manage intense emotions.',
+            'Speak openly with your doctor about your current symptoms.',
+            'Don\'t isolate — social support is critical to recovery.',
+        ],
+    },
+    Severe: {
+        specialist: 'Psychiatrist (Urgent Consultation)',
+        urgency: 'Immediate',
+        urgencyColor: 'red',
+        message: 'Your results indicate a high level of distress. Please seek professional medical help immediately. You are not alone.',
+        actions: [
+            '🚨 Contact a trusted person immediately',
+            'Call a mental health helpline: iCall (India): 9152987821',
+            'Book an urgent appointment with a psychiatrist',
+            'If feeling unsafe, go to your nearest emergency room',
+            'Do not be alone — stay with a trusted person today',
+        ],
+        tips: [
+            'National crisis helpline (India): VANDREVALA FOUNDATION: 1860-2662-345',
+            'iCall Helpline: 9152987821',
+            'Remember: seeking help is a sign of strength, not weakness.',
+        ],
+    },
+};
 
 export default function DoctorSuggestionPage() {
+    const location = useLocation();
     const navigate = useNavigate();
+    const riskLevel = location.state?.riskLevel || 'Moderate';
+    const suggestion = SUGGESTIONS[riskLevel] || SUGGESTIONS.Moderate;
+
+    const urgencyBg = {
+        emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        amber: 'bg-amber-100 text-amber-700 border-amber-200',
+        orange: 'bg-orange-100 text-orange-700 border-orange-200',
+        red: 'bg-red-100 text-red-700 border-red-200',
+    }[suggestion.urgencyColor];
 
     return (
-        <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-5xl mx-auto space-y-12">
+        <div className="min-h-screen bg-slate-50 py-12 px-4">
+            <div className="max-w-3xl mx-auto space-y-8">
 
                 {/* Header */}
                 <div className="text-center">
-                    <span className="inline-block px-4 py-1.5 bg-[#EAF6F6] text-[#204E4A] rounded-full text-sm font-medium mb-4">
-                        Personalised Guidance
-                    </span>
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-                        Your Recommended Next Steps
-                    </h1>
-                    <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
-                        Based on your assessment results, here are the types of mental health professionals and actions that may help you the most.
-                    </p>
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 mb-4">
+                        <UserCheck className="w-8 h-8 text-primary-600" />
+                    </div>
+                    <h1 className="text-3xl font-extrabold text-slate-900">Doctor Suggestions</h1>
+                    <p className="text-slate-500 mt-2 text-sm">Personalized recommendations based on your assessment results.</p>
                 </div>
 
-                {/* Specialist Cards */}
-                <section>
-                    <h2 className="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
-                        <UserCheck className="w-5 h-5 text-[#204E4A]" />
-                        Consult a Specialist
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {specialists.map((spec) => (
-                            <div
-                                key={spec.type}
-                                className={`relative bg-white rounded-2xl border ${spec.border} p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col`}
-                            >
-                                {/* Recommendation badge */}
-                                <span className={`absolute top-4 right-4 text-xs font-semibold px-2 py-0.5 rounded-full ${spec.bg} text-slate-600`}>
-                                    {spec.recommendation}
-                                </span>
-
-                                <div className={`${spec.bg} rounded-xl p-3 w-fit mb-4`}>
-                                    {spec.icon}
-                                </div>
-
-                                <h3 className="text-lg font-bold text-slate-900 mb-2">{spec.type}</h3>
-                                <p className="text-sm text-slate-500 flex-1">{spec.description}</p>
-
-                                <div className="mt-4">
-                                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Suitable for</p>
-                                    <ul className="flex flex-wrap gap-1.5">
-                                        {spec.suitableFor.map((tag) => (
-                                            <li key={tag} className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{tag}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-
-                                <button className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 bg-[#204E4A] text-white rounded-lg text-sm font-medium hover:bg-[#153431] transition-colors">
-                                    <Phone className="w-4 h-4" /> Find a {spec.type}
-                                </button>
-                            </div>
-                        ))}
+                {/* Specialist Card */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <p className="text-sm text-slate-500 mb-1">Recommended Specialist</p>
+                            <h2 className="text-xl font-bold text-slate-900">{suggestion.specialist}</h2>
+                            <p className="text-slate-600 mt-2 text-sm">{suggestion.message}</p>
+                        </div>
+                        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border shrink-0 ${urgencyBg}`}>
+                            <Calendar className="w-4 h-4" />
+                            {suggestion.urgency}
+                        </div>
                     </div>
-                </section>
+                </div>
 
                 {/* Recommended Actions */}
-                <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8">
-                    <h2 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2">
-                        <Star className="w-5 h-5 text-yellow-500" />
-                        Recommended Actions
-                    </h2>
-                    <ol className="space-y-4">
-                        {[
-                            'Schedule an appointment with a psychologist or counsellor within the next 2 weeks.',
-                            'Share this AI-generated report with your chosen specialist at the first session.',
-                            'Fill in an emergency contact if you haven\'t done so already.',
-                            'Practice the mental wellness tips below daily.',
-                            'Retake this assessment every month to track your progress.'
-                        ].map((action, idx) => (
-                            <li key={idx} className="flex items-start gap-4">
-                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#EAF6F6] text-[#204E4A] font-bold text-sm flex items-center justify-center">
-                                    {idx + 1}
-                                </span>
-                                <p className="text-slate-600 pt-0.5">{action}</p>
+                <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                    <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-primary-600" /> Recommended Actions
+                    </h3>
+                    <ul className="space-y-3">
+                        {suggestion.actions.map((action, i) => (
+                            <li key={i} className="flex items-start gap-3 text-sm text-slate-700 p-3 bg-slate-50 rounded-xl">
+                                <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 font-bold flex items-center justify-center shrink-0 text-xs">{i + 1}</span>
+                                {action}
                             </li>
                         ))}
-                    </ol>
-                </section>
+                    </ul>
+                </div>
 
-                {/* Mental Wellness Tips */}
-                <section>
-                    <h2 className="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
-                        <Lightbulb className="w-5 h-5 text-amber-500" />
-                        Mental Wellness Tips
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {wellnessTips.map((tip) => (
-                            <div key={tip.title} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                                <h3 className="font-semibold text-slate-800 mb-2">{tip.title}</h3>
-                                <p className="text-sm text-slate-500">{tip.desc}</p>
-                            </div>
+                {/* Wellness Tips */}
+                <div className="bg-gradient-to-br from-emerald-50 to-primary-50 rounded-2xl p-6 border border-emerald-100">
+                    <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                        <Heart className="w-5 h-5 text-emerald-600" /> Mental Wellness Tips
+                    </h3>
+                    <ul className="space-y-3">
+                        {suggestion.tips.map((tip, i) => (
+                            <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
+                                <span className="text-emerald-500 mt-0.5">✦</span> {tip}
+                            </li>
                         ))}
-                    </div>
-                </section>
+                    </ul>
+                </div>
 
-                {/* Footer CTA */}
-                <div className="bg-[#204E4A] rounded-2xl p-8 text-center text-white">
-                    <h2 className="text-2xl font-bold mb-2">You are not alone.</h2>
-                    <p className="text-[#BED6D3] mb-6 max-w-lg mx-auto">
-                        Seeking help is a sign of strength. Your mental health journey starts with this first step.
-                    </p>
+                {/* Emergency */}
+                {(riskLevel === 'High' || riskLevel === 'Severe') && (
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-4">
+                        <PhoneCall className="w-6 h-6 text-red-600 shrink-0 mt-1" />
+                        <div>
+                            <p className="font-semibold text-red-700">Emergency Resources</p>
+                            <p className="text-sm text-red-600 mt-1">iCall (India): <strong>9152987821</strong> | Vandrevala Foundation: <strong>1860-2662-345</strong></p>
+                            <p className="text-xs text-red-500 mt-1">Available 24/7. Help is always just a call away.</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-4">
                     <button
                         onClick={() => navigate('/dashboard')}
-                        className="inline-flex items-center gap-2 bg-white text-[#204E4A] px-6 py-3 rounded-xl font-semibold hover:bg-[#EAF6F6] transition-colors shadow"
+                        className="flex-1 flex justify-center items-center gap-2 py-4 px-6 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-md transition-colors"
                     >
-                        Go to Dashboard <ChevronRight className="w-5 h-5" />
+                        Go to Dashboard
+                    </button>
+                    <button
+                        onClick={() => navigate('/report', { state: location.state })}
+                        className="flex items-center justify-center gap-2 py-4 px-6 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-colors shadow-sm"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> View Report
                     </button>
                 </div>
 
+                <p className="text-center text-xs text-slate-400">
+                    ⚠️ This is for informational purposes only and does not replace professional medical advice.
+                </p>
             </div>
         </div>
     );

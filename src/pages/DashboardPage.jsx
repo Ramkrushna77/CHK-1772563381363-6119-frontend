@@ -101,7 +101,18 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     ))}
-                   
+                    <div 
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                        className="bg-white rounded-2xl p-6 border border-primary-100 shadow-sm flex items-center gap-5 cursor-pointer hover:bg-primary-50 transition-colors group"
+                    >
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary-600 text-white group-hover:scale-110 transition-transform">
+                            <MessageSquare className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-primary-600 font-medium">MindCare Assistant</p>
+                            <p className="text-lg font-bold text-slate-900 leading-tight">Quick Help & Support</p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Profile Summary + History */}
@@ -154,7 +165,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </main>
-          
+            <Chatbot />
         </div>
     );
 }

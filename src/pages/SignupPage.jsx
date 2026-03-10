@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrainCircuit, Mail, Lock, User, Phone } from 'lucide-react';
 import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
 export default function SignupPage() {
@@ -12,9 +12,13 @@ export default function SignupPage() {
         phone: '',
         password: ''
     });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    // Navigation logic moved to handleSubmit for better control during signup flow
+    // (onAuthStateChanged still used in Login for session persistence)
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,26 +26,30 @@ export default function SignupPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
+        setError(null);
         setLoading(true);
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-            const user = userCredential.user;
 
-            // Save additional user data to Firestore
-            await setDoc(doc(db, "users", user.uid), {
+        try {
+            // Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                formData.email,
+                formData.password
+            );
+
+            // Save additional user info to Firestore
+            await setDoc(doc(db, 'users', userCredential.user.uid), {
                 fullName: formData.fullName,
                 email: formData.email,
                 phone: formData.phone,
-                createdAt: new Date()
+                createdAt: new Date().toISOString()
             });
 
-            console.log('Signup successful:', user.uid);
-            navigate('/profile-creation');
-        } catch (error) {
-            console.error("Error signing up:", error);
-            setError(error.message);
-        } finally {
+            console.log('Signup successful!');
+            navigate('/profile-setup', { replace: true });
+        } catch (err) {
+            console.error('Signup error:', err);
+            setError(err.message || 'Failed to create account.');
             setLoading(false);
         }
     };
@@ -66,8 +74,12 @@ export default function SignupPage() {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-2xl sm:px-10 border border-slate-100">
+                    {error && (
+                        <div className="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-lg p-4 text-sm">
+                            {error}
+                        </div>
+                    )}
                     <form className="space-y-6" onSubmit={handleSubmit}>
-                        {error && <div className="p-3 bg-red-100 text-red-600 rounded-md text-sm">{error}</div>}
 
                         {/* Full Name */}
                         <div>
@@ -86,7 +98,7 @@ export default function SignupPage() {
                                     value={formData.fullName}
                                     onChange={handleChange}
                                     className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-slate-300 rounded-xl py-3 border bg-slate-50 transition-colors focus:bg-white"
-                                    placeholder="John Doe"
+                                    placeholder="Name"
                                 />
                             </div>
                         </div>
@@ -108,7 +120,7 @@ export default function SignupPage() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-slate-300 rounded-xl py-3 border bg-slate-50 transition-colors focus:bg-white"
-                                    placeholder="you@example.com"
+                                    placeholder="Email address"
                                 />
                             </div>
                         </div>
@@ -163,7 +175,7 @@ export default function SignupPage() {
                                 disabled={loading}
                                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50"
                             >
-                                {loading ? 'Creating...' : 'Create Account'}
+                                {loading ? 'Creating Account...' : 'Create Account'}
                             </button>
                         </div>
                     </form>

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrainCircuit, Mail, Lock, Mic, Phone } from 'lucide-react';
-import { auth } from '../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../firebase';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
     const [formData, setFormData] = useState({
@@ -11,9 +12,29 @@ export default function LoginPage() {
     });
     const [usePhone, setUsePhone] = useState(false);
     const [isListening, setIsListening] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // Navigate when auth state changes (triggered by successful login)
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (userDoc.exists() && userDoc.data().profileCompleted) {
+                        navigate('/dashboard', { replace: true });
+                    } else {
+                        navigate('/profile-setup', { replace: true });
+                    }
+                } catch (err) {
+                    console.error("Error checking profile status:", err);
+                    navigate('/dashboard', { replace: true });
+                }
+            }
+        });
+        return () => unsubscribe();
+    }, [navigate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -59,20 +80,24 @@ export default function LoginPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
+        setError(null);
         setLoading(true);
-        // Firebase Auth natively uses Email/Password matching primarily. 
-        // For phone numbers you usually need OTP, so we support email login here or fake phone string.
-        const email = usePhone && !formData.identifier.includes('@') ? `${formData.identifier.replace(/[^0-9]/g, '')}@phone.placeholder.com` : formData.identifier;
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, formData.password);
-            console.log('Login successful:', userCredential.user.uid);
-            navigate('/dashboard');
-        } catch (error) {
-            console.error("Error signing in:", error);
-            setError(error.message);
-        } finally {
+            // Check if phone or email is used. Firebase Auth primarily uses email natively.
+            // If they are trying phone auth, we can prompt them that it's currently email-only for MVP
+            // or simply try anyway if it's formatted as an email.
+            if (usePhone) {
+                throw new Error("Phone number login requires reCAPTCHA setup. Please use email for now.");
+            }
+
+            await signInWithEmailAndPassword(auth, formData.identifier, formData.password);
+
+            console.log('Login successful!');
+            // Navigation is handled by the onAuthStateChanged listener
+        } catch (err) {
+            console.error('Login error:', err);
+            setError(err.message || 'Failed to log in.');
             setLoading(false);
         }
     };
@@ -97,8 +122,12 @@ export default function LoginPage() {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-2xl sm:px-10 border border-slate-100">
+                    {error && (
+                        <div className="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-lg p-4 text-sm">
+                            {error}
+                        </div>
+                    )}
                     <form className="space-y-6" onSubmit={handleSubmit}>
-                        {error && <div className="p-3 bg-red-100 text-red-600 rounded-md text-sm">{error}</div>}
 
                         {/* Toggle Email/Phone */}
                         <div className="flex justify-end">
