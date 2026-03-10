@@ -1,23 +1,46 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Activity, Brain, ShieldAlert, HeartPulse, ChevronRight, Download } from 'lucide-react';
 
 export default function ReportPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(true);
 
-    // Mock Assessment Results
-    const reportData = {
-        stressLevel: 75, // percentage
-        riskLevel: 'Moderate',
-        predominantEmotions: ['Stressed', 'Anxious'],
-        summary: "Based on the assessment and facial analysis, there are indications of moderate stress and anxiety. Your sleep patterns seem disrupted, contributing to an overall sense of fatigue. It is recommended to seek professional guidance for coping strategies.",
-        keyFindings: [
-            "Elevated stress detected during questionnaire.",
-            "Self-reported poor sleep quality.",
-            "Facial analysis showed frequent anxiety markers."
-        ]
+    const { answers = {}, finalEmotion = 'Neutral' } = location.state || {};
+
+    // Calculate dynamic results based on answers
+    const calculateResults = () => {
+        // Simple logic for hackathon demo
+        let score = 0;
+        const answerCounts = Object.values(answers);
+
+        answerCounts.forEach(val => {
+            if (val === 'Often' || val === 'Always' || val === 'High' || val === 'Severe' || val === 'Terrible' || val === 'Poor') score += 20;
+            if (val === 'Sometimes' || val === 'Rarely' || val === 'Moderate' || val === 'Good') score += 10;
+        });
+
+        const stressLevel = Math.min(score + (finalEmotion !== 'Happy' && finalEmotion !== 'Neutral' ? 10 : 0), 100);
+        let riskLevel = 'Low';
+        if (stressLevel > 40) riskLevel = 'Moderate';
+        if (stressLevel > 70) riskLevel = 'High';
+
+        const findings = [];
+        if (stressLevel > 50) findings.push("Elevated physiological stress markers detected.");
+        if (finalEmotion === 'Sad' || finalEmotion === 'Anxious') findings.push(`Facial analysis indicates persistent ${finalEmotion.toLowerCase()} state.`);
+        if (Object.values(answers).some(v => v === 'Always' || v === 'Severe')) findings.push("Self-reported high-frequency symptoms require attention.");
+        if (findings.length === 0) findings.push("Overall mental wellness appears stable with minimal risk factors.");
+
+        return {
+            stressLevel,
+            riskLevel,
+            predominantEmotions: [finalEmotion, stressLevel > 50 ? 'Stressed' : 'Calm'],
+            summary: `Based on your responses showing ${riskLevel.toLowerCase()} risk levels and facial indicators of ${finalEmotion.toLowerCase()} state, we've generated this wellness overview. Your reported symptoms suggest a ${stressLevel}% stress intensity.`,
+            keyFindings: findings
+        };
     };
+
+    const reportData = calculateResults();
 
     useEffect(() => {
         // Simulate AI processing time

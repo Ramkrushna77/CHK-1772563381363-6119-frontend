@@ -34,7 +34,9 @@ export default function AssessmentPage() {
                 ]);
                 setModelsLoaded(true);
             } catch (err) {
-                console.error("Error loading models:", err);
+                console.warn("AI models failed to load. Continuing with fallback mode.", err);
+                // Set modelsLoaded to true anyway to allow the camera and assessment to work
+                setModelsLoaded(true);
             }
         };
         loadModels();
@@ -61,17 +63,20 @@ export default function AssessmentPage() {
 
     const handleVideoPlay = () => {
         setInterval(async () => {
-            if (videoRef.current) {
-                const detections = await faceapi.detectSingleFace(
-                    videoRef.current,
-                    new faceapi.TinyFaceDetectorOptions()
-                ).withFaceExpressions();
+            if (videoRef.current && faceapi.nets.tinyFaceDetector.params) {
+                try {
+                    const detections = await faceapi.detectSingleFace(
+                        videoRef.current,
+                        new faceapi.TinyFaceDetectorOptions()
+                    ).withFaceExpressions();
 
-                if (detections) {
-                    const expressions = detections.expressions;
-                    // Find the dominant emotion
-                    const dominantEmotion = Object.keys(expressions).reduce((a, b) => expressions[a] > expressions[b] ? a : b);
-                    setEmotion(dominantEmotion.charAt(0).toUpperCase() + dominantEmotion.slice(1));
+                    if (detections) {
+                        const expressions = detections.expressions;
+                        const dominantEmotion = Object.keys(expressions).reduce((a, b) => expressions[a] > expressions[b] ? a : b);
+                        setEmotion(dominantEmotion.charAt(0).toUpperCase() + dominantEmotion.slice(1));
+                    }
+                } catch (e) {
+                    console.debug("Analysis silent failure (expected in fallback)");
                 }
             }
         }, 1000); // Check every second
@@ -131,9 +136,14 @@ export default function AssessmentPage() {
         setIsSubmitting(true);
         // Simulate delay for AI Report Generation
         setTimeout(() => {
-            // In a real app, you would send 'answers' and recorded 'emotions' to the backend
-            navigate('/report');
-        }, 2000);
+            // Pass assessment results and detected emotions to the report page
+            navigate('/report', {
+                state: {
+                    answers,
+                    finalEmotion: emotion
+                }
+            });
+        }, 3000);
     };
 
     return (
@@ -165,8 +175,8 @@ export default function AssessmentPage() {
                                 key={idx}
                                 onClick={() => handleAnswer(option)}
                                 className={`w-full text-left px-6 py-4 rounded-xl border-2 transition-all ${answers[questions[currentQuestion].id] === option
-                                        ? 'border-[#204E4A] bg-[#EAF6F6] text-[#204E4A] font-semibold'
-                                        : 'border-slate-200 hover:border-[#BED6D3] text-slate-700'
+                                    ? 'border-[#204E4A] bg-[#EAF6F6] text-[#204E4A] font-semibold'
+                                    : 'border-slate-200 hover:border-[#BED6D3] text-slate-700'
                                     }`}
                             >
                                 {option}
@@ -215,16 +225,23 @@ export default function AssessmentPage() {
                         {!modelsLoaded ? (
                             <div className="absolute inset-0 flex items-center justify-center text-white/70">
                                 <Spinner />
-                                <span className="ml-2">Loading AI Models...</span>
+                                <span className="ml-2">Initializing Camera...</span>
                             </div>
                         ) : (
-                            <video
-                                ref={videoRef}
-                                autoPlay
-                                muted
-                                onPlay={handleVideoPlay}
-                                className="w-full h-full object-cover transform -scale-x-100" // Mirror effect
-                            />
+                            <>
+                                <video
+                                    ref={videoRef}
+                                    autoPlay
+                                    muted
+                                    onPlay={handleVideoPlay}
+                                    className="w-full h-full object-cover transform -scale-x-100" // Mirror effect
+                                />
+                                {(!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceExpressionNet.params) && (
+                                    <div className="absolute bottom-4 left-4 right-4 bg-orange-500/80 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs font-medium text-center">
+                                        Offline Analysis Mode (AI Models Unavailable)
+                                    </div>
+                                )}
+                            </>
                         )}
 
                         {/* Emotion Overlay */}

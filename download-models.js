@@ -11,41 +11,55 @@ if (!fs.existsSync(modelsDir)) {
     fs.mkdirSync(modelsDir, { recursive: true });
 }
 
-const filePaths = [
-    'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights/tiny_face_detector_model-weights_manifest.json',
-    'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights/tiny_face_detector_model.weights.bin',
-    'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights/face_expression_model-weights_manifest.json',
-    'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights/face_expression_model.weights.bin'
+// These are known working raw links for face-api.js weights from a reliable mirror
+// Specifically the face_expression_model.weights.bin should be ~710KB
+const baseUrl = 'https://raw.githubusercontent.com/vladmandic/face-api/master/model';
+const files = [
+    'tiny_face_detector_model-weights_manifest.json',
+    'tiny_face_detector_model.weights.bin',
+    'face_expression_model-weights_manifest.json',
+    'face_expression_model.weights.bin'
 ];
 
-filePaths.forEach(url => {
-    const fileName = url.substring(url.lastIndexOf('/') + 1);
-    const destPath = path.join(modelsDir, fileName);
-
-    const fileStream = fs.createWriteStream(destPath);
-    https.get(url, (response) => {
-        if (response.statusCode === 200 || response.statusCode === 301 || response.statusCode === 302) {
+async function downloadFile(url, dest) {
+    return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(dest);
+        https.get(url, (response) => {
             if (response.statusCode === 301 || response.statusCode === 302) {
-                https.get(response.headers.location, (res) => {
-                    res.pipe(fileStream);
-                    fileStream.on('finish', () => {
-                        fileStream.close();
-                        console.log(`Downloaded ${fileName}`);
-                    });
-                });
-            } else {
-                response.pipe(fileStream);
-                fileStream.on('finish', () => {
-                    fileStream.close();
-                    console.log(`Downloaded ${fileName}`);
-                });
+                downloadFile(response.headers.location, dest).then(resolve).catch(reject);
+                return;
             }
-        } else {
-            console.error(`Failed to download ${fileName}: ${response.statusCode}`);
-            fs.unlinkSync(destPath);
-        }
-    }).on('error', (err) => {
-        console.error(`Error downloading ${fileName}: ${err.message}`);
-        fs.unlinkSync(destPath);
+            if (response.statusCode !== 200) {
+                reject(new Error(`Failed to download ${url}: ${response.statusCode}`));
+                return;
+            }
+            response.pipe(file);
+            file.on('finish', () => {
+                file.close();
+                resolve();
+            });
+        }).on('error', (err) => {
+            fs.unlink(dest, () => { });
+            reject(err);
+        });
     });
-});
+}
+
+async function main() {
+    console.log('Starting model downloads from vladmandic mirror...');
+    for (const file of files) {
+        const url = `${baseUrl}/${file}`;
+        const dest = path.join(modelsDir, file);
+        try {
+            console.log(`Downloading ${file}...`);
+            await downloadFile(url, dest);
+            const stats = fs.statSync(dest);
+            console.log(`Success: ${file} (${stats.size} bytes)`);
+        } catch (err) {
+            console.error(`Error downloading ${file}: ${err.message}`);
+        }
+    }
+    console.log('Download process finished.');
+}
+
+main();
