@@ -7,6 +7,7 @@ import AssessmentPage from './pages/AssessmentPage';
 import ReportPage from './pages/ReportPage';
 import DoctorSuggestionPage from './pages/DoctorSuggestionPage';
 import DashboardPage from './pages/DashboardPage';
+import ChatbotPage from './pages/ChatbotPage.jsx';
 
 function App() {
     return (
@@ -20,6 +21,7 @@ function App() {
                 <Route path="/report" element={<ReportPage />} />
                 <Route path="/suggestions" element={<DoctorSuggestionPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/chatbot" element={<ChatbotPage />} />
             </Routes>
         </BrowserRouter>
     );
