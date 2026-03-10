@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Activity, MessageSquare, FileText, CheckCircle2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { User } from 'lucide-react'; 
+import { User } from 'lucide-react';
 
 export default function LandingPage() {
     return (
@@ -44,7 +44,7 @@ export default function LandingPage() {
                                     <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-300"></div>
                                     <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-400"></div>
                                 </div>
-                               
+
                             </div>
                         </div>
 
@@ -54,7 +54,14 @@ export default function LandingPage() {
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
 
                             {/* Floating Card */}
-                            
+                            <div className="absolute bottom-6 left-6 right-6">
+                                <div className="glass-panel rounded-2xl p-6 flex items-start gap-4">
+                                    <div className="bg-green-100 p-2 rounded-lg">
+                                        <CheckCircle2 className="h-6 w-6 text-green-600" />
+                                    </div>
+
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -159,6 +166,7 @@ export default function LandingPage() {
     );
 }
 
+// eslint-disable-next-line react/prop-types
 function FeatureCard({ icon, iconBg, title, description, linkText, linkUrl }) {
     return (
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">

@@ -2,12 +2,11 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import ProfileCreationPage from './pages/ProfileCreationPage';
+import ProfileSetupPage from './pages/ProfileSetupPage';
 import AssessmentPage from './pages/AssessmentPage';
+import DashboardPage from './pages/DashboardPage';
 import ReportPage from './pages/ReportPage';
 import DoctorSuggestionPage from './pages/DoctorSuggestionPage';
-import DashboardPage from './pages/DashboardPage';
-import ChatbotPage from './pages/ChatbotPage.jsx';
 
 function App() {
     return (
@@ -16,12 +15,11 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
-                <Route path="/profile-creation" element={<ProfileCreationPage />} />
+                <Route path="/profile-setup" element={<ProfileSetupPage />} />
                 <Route path="/assessment" element={<AssessmentPage />} />
-                <Route path="/report" element={<ReportPage />} />
-                <Route path="/suggestions" element={<DoctorSuggestionPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/chatbot" element={<ChatbotPage />} />
+                <Route path="/report" element={<ReportPage />} />
+                <Route path="/doctors" element={<DoctorSuggestionPage />} />
             </Routes>
         </BrowserRouter>
     );
