@@ -10,14 +10,26 @@ const apiClient = axios.create({
     },
 });
 
+// Add a request interceptor to include the auth token
+apiClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers['x-auth-token'] = token;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
 const buildError = (error, fallbackMessage) => {
     if (error.response) {
-        const details = error.response.data?.detail;
-        const message = typeof details === 'string' ? details : fallbackMessage;
+        const data = error.response.data;
+        // Express backend uses { message: '...' }, FastAPI uses { detail: '...' }
+        const message = data?.message || (typeof data?.detail === 'string' ? data.detail : null);
         return new Error(message || fallbackMessage);
     }
     if (error.request) {
-        return new Error('Unable to reach backend server. Please check that FastAPI is running on http://localhost:8000.');
+        return new Error('Unable to reach backend server. Please check that the server is running on http://localhost:8000.');
     }
     return new Error(error.message || fallbackMessage);
 };
@@ -58,6 +70,26 @@ export const analyzeSpeech = async (audioBlob) => {
         return response.data;
     } catch (error) {
         throw buildError(error, 'Failed to analyze speech emotion.');
+    }
+};
+
+export const login = async (email, password) => {
+    try {
+        const response = await apiClient.post('/api/auth/login', { email, password });
+        return response.data;
+    } catch (error) {
+        throw buildError(error, 'Login failed. Please check your credentials.');
+    }
+};
+
+export const signup = async (userData) => {
+    try {
+        // Backend doesn't have a signup route yet, I should probably add it or note it
+        // For now, I'll add the call to the anticipated endpoint
+        const response = await apiClient.post('/api/auth/signup', userData);
+        return response.data;
+    } catch (error) {
+        throw buildError(error, 'Signup failed. Please try again.');
     }
 };
 

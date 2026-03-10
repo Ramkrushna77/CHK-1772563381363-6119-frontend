@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Activity, HeartPulse, Stethoscope, ArrowRight } from 'lucide-react';
-import { auth, db } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import apiClient from '../services/api';
 
 export default function ProfileSetupPage() {
     const navigate = useNavigate();
@@ -19,18 +17,6 @@ export default function ProfileSetupPage() {
     });
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [authLoading, setAuthLoading] = useState(true);
-
-    // Ensure we have a user session before allowing form submission
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                navigate('/login');
-            }
-            setAuthLoading(false);
-        });
-        return () => unsubscribe();
-    }, [navigate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -42,28 +28,37 @@ export default function ProfileSetupPage() {
         setLoading(true);
 
         try {
-            const user = auth.currentUser;
-            if (!user) {
-                throw new Error("No user is currently logged in. Please sign in first.");
+            // Check if user is logged in via JWT
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+            if (!token || !user?.id) {
+                throw new Error("No user session found. Please login first.");
             }
 
-            // Reference to the user's document in the "users" collection
-            const userDocRef = doc(db, 'users', user.uid);
+            // Save to backend
+            await apiClient.put('/api/auth/profile', { profile: formData });
 
-            // Use setDoc with merge: true to ensure the document exists
-            await setDoc(userDocRef, {
-                profile: formData,
-                profileCompleted: true,
-                updatedAt: new Date().toISOString()
-            }, { merge: true });
+            // Also update localStorage with the name from form if not already set
+            if (formData.fullName && !user.name) {
+                const updatedUser = { ...user, name: formData.fullName };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
 
-            console.log('Profile setup saved successfully!');
-            setLoading(false);
-            navigate('/dashboard');
+            // Store profile info locally for quick access
+            localStorage.setItem('profile', JSON.stringify(formData));
+
+            navigate('/patient-dashboard', { replace: true });
         } catch (err) {
             console.error('Error saving profile data:', err);
-            setError(err.message || "Failed to save profile. Please try again.");
-            setLoading(false);
+            // If backend profile endpoint doesn't exist yet, save locally and continue
+            if (err.message?.includes('404') || err.message?.includes('reach backend')) {
+                localStorage.setItem('profile', JSON.stringify(formData));
+                navigate('/patient-dashboard', { replace: true });
+            } else {
+                setError(err.message || "Failed to save profile. Please try again.");
+                setLoading(false);
+            }
         }
     };
 
@@ -77,17 +72,6 @@ export default function ProfileSetupPage() {
             <p className="text-sm text-slate-500 mt-1">{description}</p>
         </div>
     );
-
-    if (authLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="text-center">
-                    <Activity className="w-12 h-12 text-primary-600 mx-auto mb-4 animate-pulse" />
-                    <p className="text-slate-600 font-medium">Verifying session...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">

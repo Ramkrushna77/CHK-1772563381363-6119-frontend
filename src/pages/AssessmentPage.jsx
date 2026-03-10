@@ -2,8 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, ChevronRight, ChevronLeft, Camera, Activity, MicOff, AlertCircle } from 'lucide-react';
 import * as faceapi from 'face-api.js';
-import { auth, db } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
 import { detectEmotion, analyzeSpeech } from '../services/api';
 
 const QUESTIONS = [
@@ -233,24 +231,8 @@ export default function AssessmentPage() {
         if (currentQuestion < QUESTIONS.length - 1) {
             setCurrentQuestion(c => c + 1);
         } else {
-            // Submit assessment
+            // Submit assessment — pass data to report page via state
             setSubmitting(true);
-            const user = auth.currentUser;
-            const assessmentData = {
-                answers,
-                dominantEmotion: detectedEmotion,
-                speechEmotion,
-                completedAt: new Date().toISOString(),
-                userId: user?.uid || 'anonymous',
-            };
-            try {
-                if (user) {
-                    await addDoc(collection(db, 'assessments'), assessmentData);
-                }
-            } catch (e) {
-                console.error('Failed to save assessment:', e);
-            }
-            // Pass data via navigation state
             navigate('/report', {
                 state: {
                     answers,

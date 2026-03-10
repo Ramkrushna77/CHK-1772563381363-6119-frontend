@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrainCircuit, Mail, Lock, User, Phone } from 'lucide-react';
-import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { signup } from '../services/api';
 
 export default function SignupPage() {
     const [formData, setFormData] = useState({
@@ -13,12 +11,8 @@ export default function SignupPage() {
         password: ''
     });
     const navigate = useNavigate();
-
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-
-    // Navigation logic moved to handleSubmit for better control during signup flow
-    // (onAuthStateChanged still used in Login for session persistence)
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -30,20 +24,16 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            // Create user in Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(
-                auth,
-                formData.email,
-                formData.password
-            );
-
-            // Save additional user info to Firestore
-            await setDoc(doc(db, 'users', userCredential.user.uid), {
-                fullName: formData.fullName,
+            const data = await signup({
+                name: formData.fullName,
                 email: formData.email,
-                phone: formData.phone,
-                createdAt: new Date().toISOString()
+                password: formData.password,
+                phone: formData.phone
             });
+
+            // Store token and user info
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
 
             console.log('Signup successful!');
             navigate('/profile-setup', { replace: true });

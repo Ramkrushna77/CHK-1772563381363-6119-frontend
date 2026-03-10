@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BrainCircuit, AlertTriangle, CheckCircle, Activity, ChevronRight, RotateCcw, MessageSquare, Bot, Circle } from 'lucide-react';
 import { generateReport } from '../services/api';
@@ -36,7 +36,9 @@ export default function ReportPage() {
     const [reportError, setReportError] = useState('');
 
     const { answers = {}, emotion = 'Neutral', speechEmotion = 'neutral' } = location.state || {};
-    const result = analyzeResults(answers, emotion);
+
+    // Memoize to avoid infinite loop — analyzeResults creates a new object every render
+    const result = useMemo(() => analyzeResults(answers, emotion), [JSON.stringify(answers), emotion]);
 
     useEffect(() => {
         const fetchReport = async () => {
@@ -56,7 +58,8 @@ export default function ReportPage() {
         };
 
         fetchReport();
-    }, [emotion, speechEmotion, result.riskLevel]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run only once on mount — all deps are from location.state which doesn't change
 
     if (!showReport) {
         return (
@@ -92,12 +95,11 @@ export default function ReportPage() {
                 {/* Risk & Stress Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Risk Level */}
-                    <div className={`rounded-2xl p-6 border-2 ${
-                        result.riskColor === 'emerald' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                        result.riskColor === 'amber' ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                        result.riskColor === 'orange' ? 'bg-orange-50 border-orange-200 text-orange-700' :
-                        'bg-red-50 border-red-200 text-red-700'
-                    }`}>
+                    <div className={`rounded-2xl p-6 border-2 ${result.riskColor === 'emerald' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                            result.riskColor === 'amber' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                                result.riskColor === 'orange' ? 'bg-orange-50 border-orange-200 text-orange-700' :
+                                    'bg-red-50 border-red-200 text-red-700'
+                        }`}>
                         <div className="flex items-center gap-3 mb-3">
                             <AlertTriangle className="w-6 h-6" />
                             <h3 className="font-bold text-lg">Risk Level</h3>
@@ -114,12 +116,11 @@ export default function ReportPage() {
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-4 mb-2">
                             <div
-                                className={`h-4 rounded-full transition-all duration-1000 ${
-                                    result.stressColor === 'emerald' ? 'bg-emerald-500' :
-                                    result.stressColor === 'amber' ? 'bg-amber-500' :
-                                    result.stressColor === 'orange' ? 'bg-orange-500' :
-                                    'bg-red-500'
-                                }`}
+                                className={`h-4 rounded-full transition-all duration-1000 ${result.stressColor === 'emerald' ? 'bg-emerald-500' :
+                                        result.stressColor === 'amber' ? 'bg-amber-500' :
+                                            result.stressColor === 'orange' ? 'bg-orange-500' :
+                                                'bg-red-500'
+                                    }`}
                                 style={{ width: `${result.score}%` }}
                             />
                         </div>

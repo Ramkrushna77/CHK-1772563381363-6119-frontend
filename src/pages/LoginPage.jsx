@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BrainCircuit, Mail, Lock, Mic, Phone } from 'lucide-react';
-import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { BrainCircuit, Mail, Lock, Phone, Mic } from 'lucide-react';
+import { login } from '../services/api';
 
 export default function LoginPage() {
     const [formData, setFormData] = useState({
@@ -16,32 +14,11 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // Navigate when auth state changes (triggered by successful login)
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                try {
-                    const userDoc = await getDoc(doc(db, 'users', user.uid));
-                    if (userDoc.exists() && userDoc.data().profileCompleted) {
-                        navigate('/dashboard', { replace: true });
-                    } else {
-                        navigate('/profile-setup', { replace: true });
-                    }
-                } catch (err) {
-                    console.error("Error checking profile status:", err);
-                    navigate('/dashboard', { replace: true });
-                }
-            }
-        });
-        return () => unsubscribe();
-    }, [navigate]);
-
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSpeechToText = (field) => {
-        // Check if browser supports SpeechRecognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             alert("Your browser does not support the Web Speech API. Please try Chrome.");
@@ -53,28 +30,15 @@ export default function LoginPage() {
         recognition.interimResults = false;
         recognition.lang = 'en-US';
 
-        recognition.onstart = () => {
-            setIsListening(true);
-        };
-
+        recognition.onstart = () => setIsListening(true);
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
-            // Remove spaces if it's supposed to be an email (basic cleanup)
             const cleanTranscript = field === 'identifier' && !usePhone ? transcript.replace(/\s+/g, '').toLowerCase() : transcript;
-
             setFormData(prev => ({ ...prev, [field]: cleanTranscript }));
             setIsListening(false);
         };
-
-        recognition.onerror = (event) => {
-            console.error("Speech recognition error", event.error);
-            setIsListening(false);
-        };
-
-        recognition.onend = () => {
-            setIsListening(false);
-        };
-
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
         recognition.start();
     };
 
@@ -84,17 +48,24 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            // Check if phone or email is used. Firebase Auth primarily uses email natively.
-            // If they are trying phone auth, we can prompt them that it's currently email-only for MVP
-            // or simply try anyway if it's formatted as an email.
             if (usePhone) {
-                throw new Error("Phone number login requires reCAPTCHA setup. Please use email for now.");
+                throw new Error("Phone login is currently disabled. Please use your email.");
             }
 
-            await signInWithEmailAndPassword(auth, formData.identifier, formData.password);
+            const data = await login(formData.identifier, formData.password);
 
-            console.log('Login successful!');
-            // Navigation is handled by the onAuthStateChanged listener
+            // Store token and user info
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            // Redirect based on role
+            if (data.user.role === 'doctor') {
+                navigate('/doctor-dashboard', { replace: true });
+            } else if (data.user.role === 'admin') {
+                navigate('/admin-dashboard', { replace: true });
+            } else {
+                navigate('/patient-dashboard', { replace: true });
+            }
         } catch (err) {
             console.error('Login error:', err);
             setError(err.message || 'Failed to log in.');

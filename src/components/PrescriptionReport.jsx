@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Download, Loader, AlertCircle, ChevronDown } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { sendMessage } from '../services/api';
 
 export default function PrescriptionReport({ answers, emotion, speechEmotion, result, backendReport }) {
@@ -50,44 +51,96 @@ Please format this as practical, compassionate guidance that a healthcare profes
         generateAnalysis();
     }, [answers, emotion, speechEmotion, result]);
 
-    const downloadPDF = () => {
+    const downloadPDF = async () => {
         try {
             setPdfLoading(true);
             const element = reportRef.current;
-            
+
             if (!element) {
                 alert('Report not ready. Please wait a moment and try again.');
                 setPdfLoading(false);
                 return;
             }
 
-            const opt = {
-                margin: 10,
-                filename: `MindCare_Mental_Health_Report_${new Date().getTime()}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4', compressPDF: true }
+            // Temporarily replace oklch colors in the DOM because html2canvas doesn't support them
+            const originalStyles = new Map();
+            const processElementStyles = (el) => {
+                if (!el || !el.style) return;
+                const computed = window.getComputedStyle(el);
+                const propsToFix = ['backgroundColor', 'color', 'borderColor'];
+
+                let changedProps = {};
+                let hasChanges = false;
+
+                propsToFix.forEach(prop => {
+                    const val = computed[prop];
+                    if (val && val.includes('oklch')) {
+                        // Very rough fallback for Tailwind's generated oklch colors 
+                        // It maps them to valid CSS that html2canvas won't crash on
+                        // We extract this to something safe, e.g., mapping to an empty string to let the cascade handle it 
+                        // or mapping everything into a generic flat rgb to prevent the parsing crash 
+                        changedProps[prop] = el.style[prop]; // store original
+                        hasChanges = true;
+
+                        // For the purpose of html2canvas parsing, we just convert the string to something it handles
+                        // Since computing true RGB from OKLCH requires complex math, we use a basic fallback slate/gray
+                        el.style[prop] = prop === 'color' ? 'rgb(15, 23, 42)' : prop === 'borderColor' ? 'rgb(226, 232, 240)' : 'rgb(248, 250, 252)';
+                    }
+                });
+
+                if (hasChanges) {
+                    originalStyles.set(el, changedProps);
+                }
+
+                for (let i = 0; i < el.children.length; i++) {
+                    processElementStyles(el.children[i]);
+                }
             };
 
-            // Use html2pdf with proper promise handling
-            html2pdf()
-                .set(opt)
-                .from(element)
-                .save()
-                .then(() => {
-                    setPdfLoading(false);
-                })
-                .catch((error) => {
-                    console.error('PDF download error:', error);
-                    alert('Failed to download PDF. Please try again.');
-                    setPdfLoading(false);
+            processElementStyles(element);
+
+            // Simple robust capture
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                ignoreElements: (node) => {
+                    // Safety check to ignore nodes with unparseable colors explicitly
+                    const style = window.getComputedStyle(node);
+                    return style.color.includes('oklch') || style.backgroundColor.includes('oklch') || style.borderColor.includes('oklch');
+                }
+            });
+
+            // Restore original styles
+            originalStyles.forEach((props, el) => {
+                Object.entries(props).forEach(([prop, val]) => {
+                    el.style[prop] = val;
                 });
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+            // Create PDF
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`MindCare_Health_Report_${Date.now()}.pdf`);
+
+            setPdfLoading(false);
         } catch (error) {
-            console.error('PDF download error:', error);
-            alert('Failed to download PDF. Please try again.');
+            console.error('PDF generation error:', error);
+            alert('PDF generation failed: ' + (error.message || 'Unknown error'));
             setPdfLoading(false);
         }
     };
+
 
     const formatDate = (date) => {
         return new Date(date).toLocaleDateString('en-US', {
@@ -204,7 +257,7 @@ Please format this as practical, compassionate guidance that a healthcare profes
                         className="w-full text-left flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors mb-4 cursor-pointer"
                     >
                         <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wide">Personalized Wellness Guidance</h2>
-                        <ChevronDown 
+                        <ChevronDown
                             className={`w-5 h-5 text-primary-600 transition-transform ${analysisExpanded ? 'rotate-180' : ''}`}
                         />
                     </button>
@@ -235,26 +288,24 @@ Please format this as practical, compassionate guidance that a healthcare profes
                 </div>
 
                 {/* Risk Level Alert */}
-                <div className={`rounded-lg p-4 mb-8 ${
-                    result.riskLevel === 'Severe' ? 'bg-red-50 border border-red-200' :
+                <div className={`rounded-lg p-4 mb-8 ${result.riskLevel === 'Severe' ? 'bg-red-50 border border-red-200' :
                     result.riskLevel === 'High' ? 'bg-orange-50 border border-orange-200' :
-                    result.riskLevel === 'Moderate' ? 'bg-amber-50 border border-amber-200' :
-                    'bg-green-50 border border-green-200'
-                }`}>
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-700 mb-2">Clinical Recommendation</p>
-                    <p className={`text-sm font-semibold ${
-                        result.riskLevel === 'Severe' ? 'text-red-800' :
-                        result.riskLevel === 'High' ? 'text-orange-800' :
-                        result.riskLevel === 'Moderate' ? 'text-amber-800' :
-                        'text-green-800'
+                        result.riskLevel === 'Moderate' ? 'bg-amber-50 border border-amber-200' :
+                            'bg-green-50 border border-green-200'
                     }`}>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-700 mb-2">Clinical Recommendation</p>
+                    <p className={`text-sm font-semibold ${result.riskLevel === 'Severe' ? 'text-red-800' :
+                        result.riskLevel === 'High' ? 'text-orange-800' :
+                            result.riskLevel === 'Moderate' ? 'text-amber-800' :
+                                'text-green-800'
+                        }`}>
                         {result.riskLevel === 'Severe'
                             ? 'Urgent: Please contact a mental health professional immediately. Crisis support is available 24/7 at 988.'
                             : result.riskLevel === 'High'
-                            ? 'Recommended: Schedule an appointment with a mental health professional soon to discuss your concerns.'
-                            : result.riskLevel === 'Moderate'
-                            ? 'Advised: Consider speaking with a counselor or therapist to develop a wellness plan.'
-                            : 'Your current mental health status appears stable. Continue healthy habits and monitor your wellbeing.'}
+                                ? 'Recommended: Schedule an appointment with a mental health professional soon to discuss your concerns.'
+                                : result.riskLevel === 'Moderate'
+                                    ? 'Advised: Consider speaking with a counselor or therapist to develop a wellness plan.'
+                                    : 'Your current mental health status appears stable. Continue healthy habits and monitor your wellbeing.'}
                     </p>
                 </div>
 
@@ -262,8 +313,8 @@ Please format this as practical, compassionate guidance that a healthcare profes
                 <div className="bg-slate-100 rounded-lg p-4 mb-8 text-xs text-slate-600 leading-relaxed">
                     <p className="font-semibold mb-2">⚠️ Important Disclaimer</p>
                     <p>
-                        This assessment report is generated for informational and educational purposes only. It is not a medical diagnosis or treatment plan. 
-                        The results should not replace professional medical or mental health consultation. Please consult with a licensed healthcare professional 
+                        This assessment report is generated for informational and educational purposes only. It is not a medical diagnosis or treatment plan.
+                        The results should not replace professional medical or mental health consultation. Please consult with a licensed healthcare professional
                         for proper diagnosis and treatment recommendations.
                     </p>
                 </div>

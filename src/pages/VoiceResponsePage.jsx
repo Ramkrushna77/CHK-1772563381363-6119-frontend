@@ -14,7 +14,7 @@ export default function VoiceResponsePage() {
     const [transcript, setTranscript] = useState('');
     const [error, setError] = useState('');
     const [isSupported, setIsSupported] = useState(true);
-    
+
     const recognitionRef = useRef(null);
     const silenceTimerRef = useRef(null);
 
@@ -23,7 +23,7 @@ export default function VoiceResponsePage() {
     useEffect(() => {
         // Check if browser supports Speech Recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        
+
         if (!SpeechRecognition) {
             setIsSupported(false);
             setError('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
@@ -56,12 +56,12 @@ export default function VoiceResponsePage() {
 
             if (finalTranscript) {
                 setTranscript(prev => prev + finalTranscript);
-                
+
                 // Reset silence timer
                 if (silenceTimerRef.current) {
                     clearTimeout(silenceTimerRef.current);
                 }
-                
+
                 // Auto-stop after 3 seconds of silence
                 silenceTimerRef.current = setTimeout(() => {
                     stopRecording();
@@ -73,7 +73,7 @@ export default function VoiceResponsePage() {
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            
+
             if (event.error === 'no-speech') {
                 setError('No speech detected. Please try again.');
             } else if (event.error === 'not-allowed') {
@@ -81,7 +81,7 @@ export default function VoiceResponsePage() {
             } else {
                 setError(`Error: ${event.error}. Please try again.`);
             }
-            
+
             setIsRecording(false);
         };
 
@@ -150,13 +150,12 @@ export default function VoiceResponsePage() {
         }
 
         stopRecording();
-        
+
         // Store the transcript in localStorage or state management
         localStorage.setItem('voiceResponse', transcript);
-        
-        // Navigate to next page (you can customize this)
-        alert('Response submitted successfully!\n\nYour response: ' + transcript);
-        // navigate('/assessment'); // Uncomment to navigate to assessment page
+
+        // Navigate to next page
+        navigate('/assessment');
     };
 
     const handleBack = () => {
@@ -167,7 +166,7 @@ export default function VoiceResponsePage() {
     return (
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-primary-50">
             <Navbar />
-            
+
             <main className="flex-grow container mx-auto px-4 py-12">
                 <div className="max-w-4xl mx-auto">
                     {/* Back Button */}
