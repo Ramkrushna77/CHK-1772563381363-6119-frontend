@@ -6,6 +6,7 @@ import ProfileCreationPage from './pages/ProfileCreationPage';
 import AssessmentPage from './pages/AssessmentPage';
 import ReportPage from './pages/ReportPage';
 import DoctorSuggestionPage from './pages/DoctorSuggestionPage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
     return (
@@ -18,7 +19,7 @@ function App() {
                 <Route path="/assessment" element={<AssessmentPage />} />
                 <Route path="/report" element={<ReportPage />} />
                 <Route path="/suggestions" element={<DoctorSuggestionPage />} />
-                {/* Additional routes will be added here */}
+                <Route path="/dashboard" element={<DashboardPage />} />
             </Routes>
         </BrowserRouter>
     );
