@@ -4,7 +4,6 @@ import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { BrainCircuit, Activity, FileText, Calendar, Download, ChevronRight, MessageSquare } from 'lucide-react';
-import Chatbot from '../components/Chatbot';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
@@ -101,17 +100,28 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     ))}
-                    <div 
-                        onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                        className="bg-white rounded-2xl p-6 border border-primary-100 shadow-sm flex items-center gap-5 cursor-pointer hover:bg-primary-50 transition-colors group"
-                    >
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary-600 text-white group-hover:scale-110 transition-transform">
-                            <MessageSquare className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-primary-600 font-medium">MindCare Assistant</p>
-                            <p className="text-lg font-bold text-slate-900 leading-tight">Quick Help & Support</p>
-                        </div>
+                </div>
+
+                {/* Assistant Embedded Section */}
+                <div className="bg-white rounded-2xl p-8 border border-primary-100 shadow-sm mb-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
+                    <div className="w-20 h-20 rounded-2xl bg-primary-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-primary-100 group-hover:rotate-3 transition-transform">
+                        <MessageSquare size={32} />
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                        <h2 className="text-2xl font-bold text-slate-900">MindCare AI Assistant</h2>
+                        <p className="text-slate-600 mt-2 max-w-xl">
+                            Need a safe space to talk? Your personal assistant is available 24/7 to listen,
+                            provide relaxation techniques, and help you navigate your mental wellbeing.
+                        </p>
+                    </div>
+                    <div>
+                        <button
+                            onClick={() => navigate('/chatbot')}
+                            className="bg-primary-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-primary-700 transition-all shadow-md active:scale-95 flex items-center gap-2"
+                        >
+                            Open Assistant <ChevronRight size={18} />
+                        </button>
                     </div>
                 </div>
 
@@ -165,7 +175,6 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </main>
-            <Chatbot />
         </div>
     );
 }

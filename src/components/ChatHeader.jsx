@@ -3,26 +3,24 @@ import { Bot, Circle } from 'lucide-react';
 
 const ChatHeader = () => {
     return (
-        <header className="bg-white border-b border-slate-100 py-4 px-6 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                    <Bot size={24} />
+        <div className="bg-white border-b border-slate-100 py-3 px-4 flex items-center justify-between sticky top-0 z-10 shadow-sm rounded-t-2xl">
+            <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-primary-50 rounded-full flex items-center justify-center text-primary-600">
+                    <Bot size={20} />
                 </div>
                 <div>
-                    <h1 className="text-lg font-semibold text-slate-800 leading-none">Mental Health Assistant</h1>
-                    <div className="flex items-center gap-1.5 mt-1">
-                        <Circle size={8} className="fill-emerald-500 text-emerald-500 animate-pulse" />
-                        <span className="text-xs text-slate-500 font-medium tracking-wide">AI Assistant Active</span>
+                    <h1 className="text-sm font-semibold text-slate-800 leading-none">MindCare Assistant</h1>
+                    <div className="flex items-center gap-1 mt-0.5">
+                        <Circle size={6} className="fill-emerald-500 text-emerald-500 animate-pulse" />
+                        <span className="text-[10px] text-slate-500 font-medium">Assistant Active</span>
                     </div>
                 </div>
             </div>
 
-            <div className="hidden md:block">
-                <div className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full border border-emerald-100">
-                    Secure & Private
-                </div>
+            <div className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-medium rounded-full border border-emerald-100">
+                Private
             </div>
-        </header>
+        </div>
     );
 };
 
