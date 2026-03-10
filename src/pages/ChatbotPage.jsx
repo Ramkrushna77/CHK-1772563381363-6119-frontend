@@ -112,14 +112,14 @@ const ChatbotPage = () => {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden font-sans relative">
-            {/* Ambient Background Elements */}
-            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary-100/30 rounded-full blur-[120px] pointer-events-none"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-100/30 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans relative selection:bg-primary-100 italic-text-none">
+            {/* Ambient Premium Glows */}
+            <div className="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary-200/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+            <div className="fixed bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-200/20 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDelay: '1s' }}></div>
 
             <div className="relative z-10 flex flex-col h-full max-w-5xl mx-auto w-full px-4 py-4 md:py-8">
                 {/* Header Container - Glass effect */}
-                <div className="backdrop-blur-xl bg-white/70 border border-white/20 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 mb-6 overflow-hidden">
+                <div className="glass-panel rounded-[2.5rem] mb-6 overflow-hidden premium-glow">
                     <ChatHeader />
                 </div>
 

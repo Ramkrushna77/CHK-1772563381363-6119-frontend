@@ -135,43 +135,43 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
                     {[
                         { label: 'Total Assessments', value: stats.total, icon: FileText, color: 'text-violet-600 bg-violet-50' },
                         { label: 'Avg Stress Level', value: stats.total > 0 ? `${stats.avgStress}%` : '—', icon: Activity, color: 'text-emerald-600 bg-emerald-50' },
                         { label: 'Last Assessment', value: stats.lastDate, icon: Calendar, color: 'text-amber-600 bg-amber-50' },
                     ].map(({ label, value, icon: Icon, color }) => (
-                        <div key={label} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-                                <Icon className="w-6 h-6" />
+                        <div key={label} className="glass-card rounded-[2.5rem] p-8 flex items-center gap-6 shadow-2xl shadow-slate-200/40 hover:scale-[1.02] transition-all cursor-default group">
+                            <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shrink-0 transition-transform group-hover:rotate-6 ${color}`}>
+                                <Icon className="w-8 h-8" />
                             </div>
                             <div>
-                                <p className="text-sm text-slate-500">{label}</p>
-                                <p className="text-2xl font-bold text-slate-900">{value}</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">{label}</p>
+                                <p className="text-3xl font-black text-slate-900 italic">{value}</p>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Assistant Embedded Section */}
-                <div className="bg-white rounded-2xl p-8 border border-primary-100 shadow-sm mb-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
-                    <div className="w-20 h-20 rounded-2xl bg-primary-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-primary-100 group-hover:rotate-3 transition-transform">
-                        <MessageSquare size={32} />
+                <div className="glass-panel rounded-[3.5rem] p-10 mb-10 flex flex-col md:flex-row items-center gap-10 relative overflow-hidden group premium-glow border-none bg-white">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary-50 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60 group-hover:scale-110 transition-transform duration-1000"></div>
+                    <div className="w-24 h-24 rounded-[2rem] bg-primary-600 text-white flex items-center justify-center shrink-0 shadow-2xl shadow-primary-200 group-hover:rotate-6 transition-transform">
+                        <MessageSquare size={40} />
                     </div>
-                    <div className="flex-1 text-center md:text-left">
-                        <h2 className="text-2xl font-bold text-slate-900">MindCare AI Assistant</h2>
-                        <p className="text-slate-600 mt-2 max-w-xl">
+                    <div className="flex-1 text-center md:text-left relative z-10">
+                        <h2 className="text-3xl font-black text-slate-900 italic tracking-tighter">MindCare Assistant</h2>
+                        <p className="text-slate-600 mt-3 max-w-xl text-lg font-medium leading-relaxed">
                             Need a safe space to talk? Your personal assistant is available 24/7 to listen,
-                            provide relaxation techniques, and help you navigate your mental wellbeing.
+                            provide relaxation techniques, and help you navigate your mental health.
                         </p>
                     </div>
-                    <div className="relative z-10">
+                    <div className="relative z-10 shrink-0">
                         <button
                             onClick={() => navigate('/chatbot')}
-                            className="bg-primary-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-primary-700 transition-all shadow-md active:scale-95 flex items-center gap-2 text-nowrap"
+                            className="bg-primary-600 text-white px-12 py-5 rounded-[2rem] font-black hover:bg-primary-700 transition-all shadow-xl shadow-primary-200 active:scale-95 flex items-center gap-3 uppercase tracking-widest text-[12px]"
                         >
-                            Open Assistant <ChevronRight size={18} />
+                            Open Session <ChevronRight size={20} />
                         </button>
                     </div>
                 </div>
