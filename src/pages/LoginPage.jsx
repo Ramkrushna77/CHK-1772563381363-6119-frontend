@@ -1,137 +1,232 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
+import { BrainCircuit, Mail, Lock, Mic, Phone } from 'lucide-react';
+import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { BrainCircuit, Mail, Lock, Camera, Phone, ChevronRight, Sparkles } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
-    const navigate = useNavigate();
-    const [identifier, setIdentifier] = useState('');
-    const [password, setPassword] = useState('');
+    const [formData, setFormData] = useState({
+        identifier: '',
+        password: ''
+    });
     const [usePhone, setUsePhone] = useState(false);
-    const [error, setError] = useState('');
+    const [isListening, setIsListening] = useState(false);
+    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
+    // Navigate when auth state changes (triggered by successful login)
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) navigate('/dashboard');
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (userDoc.exists() && userDoc.data().profileCompleted) {
+                        navigate('/dashboard', { replace: true });
+                    } else {
+                        navigate('/profile-setup', { replace: true });
+                    }
+                } catch (err) {
+                    console.error("Error checking profile status:", err);
+                    navigate('/dashboard', { replace: true });
+                }
+            }
         });
         return () => unsubscribe();
     }, [navigate]);
 
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSpeechToText = (field) => {
+        // Check if browser supports SpeechRecognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Your browser does not support the Web Speech API. Please try Chrome.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            setIsListening(true);
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            // Remove spaces if it's supposed to be an email (basic cleanup)
+            const cleanTranscript = field === 'identifier' && !usePhone ? transcript.replace(/\s+/g, '').toLowerCase() : transcript;
+
+            setFormData(prev => ({ ...prev, [field]: cleanTranscript }));
+            setIsListening(false);
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error", event.error);
+            setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        recognition.start();
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
+        setError(null);
         setLoading(true);
+
         try {
-            const email = usePhone ? `${identifier}@mental-health.com` : identifier;
-            await signInWithEmailAndPassword(auth, email, password);
-            navigate('/dashboard');
+            // Check if phone or email is used. Firebase Auth primarily uses email natively.
+            // If they are trying phone auth, we can prompt them that it's currently email-only for MVP
+            // or simply try anyway if it's formatted as an email.
+            if (usePhone) {
+                throw new Error("Phone number login requires reCAPTCHA setup. Please use email for now.");
+            }
+
+            await signInWithEmailAndPassword(auth, formData.identifier, formData.password);
+
+            console.log('Login successful!');
+            // Navigation is handled by the onAuthStateChanged listener
         } catch (err) {
-            setError('Invalid credentials. Please try again.');
-        } finally {
+            console.error('Login error:', err);
+            setError(err.message || 'Failed to log in.');
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 relative selection:bg-primary-100 italic-text-none overflow-hidden flex items-center justify-center p-4">
-            {/* Ambient Premium Glows */}
-            <div className="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary-100/20 rounded-full blur-[120px] pointer-events-none"></div>
-            <div className="fixed bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-100/20 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                <Link to="/" className="flex justify-center items-center gap-2 mb-6">
+                    <BrainCircuit className="h-10 w-10 text-primary-600" />
+                    <span className="font-bold text-2xl text-slate-900">MindCare AI</span>
+                </Link>
+                <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
+                    Sign in to your account
+                </h2>
+                <p className="mt-2 text-center text-sm text-slate-600">
+                    Or{' '}
+                    <Link to="/signup" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
+                        create a new account
+                    </Link>
+                </p>
+            </div>
 
-            <div className="max-w-md w-full relative z-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                <div className="glass-panel rounded-[3rem] p-10 md:p-12 shadow-2xl relative overflow-hidden group border-none bg-white/70 premium-glow">
-                    {/* Header */}
-                    <div className="text-center mb-10">
-                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-white border border-slate-100 shadow-xl mb-6 group-hover:rotate-6 transition-transform">
-                            <BrainCircuit className="w-10 h-10 text-primary-600" />
-                        </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic mb-2 uppercase">Neural Access</h1>
-                        <p className="text-slate-500 font-medium text-sm">Secure biometric entrance to your clinical dashboard.</p>
-                    </div>
-
+            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-2xl sm:px-10 border border-slate-100">
                     {error && (
-                        <div className="mb-6 bg-red-50 border border-red-100 text-red-600 rounded-2xl p-4 text-xs font-bold text-center italic">
+                        <div className="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-lg p-4 text-sm">
                             {error}
                         </div>
                     )}
-
                     <form className="space-y-6" onSubmit={handleSubmit}>
+
+                        {/* Toggle Email/Phone */}
+                        <div className="flex justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setUsePhone(!usePhone)}
+                                className="text-xs font-medium text-slate-500 hover:text-primary-600 transition-colors"
+                                tabIndex="-1"
+                            >
+                                Use {usePhone ? 'Email' : 'Phone'} instead
+                            </button>
+                        </div>
+
                         <div>
-                            <div className="flex justify-between items-end mb-2 px-1">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                                    {usePhone ? 'Telemetry Hub' : 'Vector ID'}
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={() => setUsePhone(!usePhone)}
-                                    className="text-[10px] font-black text-primary-500 hover:text-primary-600 transition-colors uppercase tracking-widest"
-                                >
-                                    Use {usePhone ? 'Email' : 'Phone'}
-                                </button>
-                            </div>
-                            <div className="relative group/input">
-                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-transform group-focus-within/input:scale-110">
+                            <label htmlFor="identifier" className="block text-sm font-medium text-slate-700">
+                                {usePhone ? 'Phone Number' : 'Email Address'}
+                            </label>
+                            <div className="mt-1 relative rounded-md shadow-sm">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     {usePhone ? (
-                                        <Phone className="h-5 w-5 text-slate-300" />
+                                        <Phone className="h-5 w-5 text-slate-400" />
                                     ) : (
-                                        <Mail className="h-5 w-5 text-slate-300" />
+                                        <Mail className="h-5 w-5 text-slate-400" />
                                     )}
                                 </div>
                                 <input
+                                    id="identifier"
+                                    name="identifier"
                                     type={usePhone ? 'tel' : 'email'}
-                                    value={identifier}
-                                    onChange={(e) => setIdentifier(e.target.value)}
-                                    className="block w-full pl-12 pr-5 py-5 bg-white border-2 border-slate-50 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-100 transition-all shadow-sm italic"
-                                    placeholder={usePhone ? '+1 (555) 000-0000' : 'name@example.com'}
                                     required
+                                    value={formData.identifier}
+                                    onChange={handleChange}
+                                    className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 pr-10 sm:text-sm border-slate-300 rounded-xl py-3 border bg-slate-50 transition-colors focus:bg-white"
+                                    placeholder={usePhone ? "+1 (555) 000-0000" : "you@example.com"}
                                 />
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSpeechToText('identifier')}
+                                        className={`focus:outline-none transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-primary-600'}`}
+                                        title="Use voice input"
+                                    >
+                                        <Mic className="h-5 w-5" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <div>
-                            <div className="flex justify-between items-end mb-2 px-1">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                                    Key Phrase
-                                </label>
-                            </div>
-                            <div className="relative group/input">
-                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-transform group-focus-within/input:scale-110">
-                                    <Lock className="h-5 w-5 text-slate-300" />
+                            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                                Password
+                            </label>
+                            <div className="mt-1 relative rounded-md shadow-sm">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Lock className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input
+                                    id="password"
+                                    name="password"
                                     type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-12 pr-5 py-5 bg-white border-2 border-slate-50 rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-100 transition-all shadow-sm italic"
-                                    placeholder="••••••••"
                                     required
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-slate-300 rounded-xl py-3 border bg-slate-50 transition-colors focus:bg-white"
+                                    placeholder="••••••••"
                                 />
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-primary-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-[12px] hover:bg-primary-700 transition-all shadow-xl shadow-primary-200 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
-                        >
-                            {loading ? (
-                                <Sparkles className="animate-spin h-5 w-5" />
-                            ) : (
-                                <>Verify & Sync <ChevronRight size={18} /></>
-                            )}
-                        </button>
-                    </form>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <input
+                                    id="remember-me"
+                                    name="remember-me"
+                                    type="checkbox"
+                                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-slate-300 rounded"
+                                />
+                                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-900">
+                                    Remember me
+                                </label>
+                            </div>
 
-                    <div className="mt-8 pt-8 border-t border-slate-50 text-center">
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                            New Subject?{' '}
-                            <Link to="/signup" className="text-primary-600 hover:text-primary-700 underline underline-offset-4">
-                                Initialize Account
-                            </Link>
-                        </p>
-                    </div>
+                            <div className="text-sm">
+                                <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
+                                    Forgot your password?
+                                </a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50"
+                            >
+                                {loading ? 'Signing in...' : 'Sign in'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

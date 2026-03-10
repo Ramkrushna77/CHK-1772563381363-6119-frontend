@@ -19,22 +19,6 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-xl shadow-2xl shadow-slate-200/50 border border-white/40;
-  }
-
-  .glass-card {
-    @apply bg-white/80 backdrop-blur-lg border border-white/50 shadow-xl;
-  }
-
-  .premium-glow {
-    @apply relative after:absolute after:inset-0 after:rounded-[inherit] after:shadow-[0_0_40px_-10px_rgba(59, 130, 246, 0.3)] after:pointer-events-none;
-  }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600;
-  }
-
-  .soft-shadow {
-    @apply shadow-[0_20px_50px_rgba(0, 0, 0, 0.05)];
+    @apply bg-white/90 backdrop-blur-md shadow-xl border border-white/20;
   }
 }

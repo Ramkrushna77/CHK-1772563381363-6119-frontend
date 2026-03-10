@@ -51,18 +51,16 @@ export default function ReportPage() {
 
     if (!showReport) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-1000">
-                <div className="relative group mb-12">
-                    <div className="absolute inset-0 bg-primary-100/50 rounded-[3rem] blur-3xl group-hover:bg-primary-200/50 transition-all duration-1000"></div>
-                    <div className="relative w-28 h-28 rounded-[2.5rem] bg-white border border-slate-100 flex items-center justify-center shadow-2xl rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                        <BrainCircuit size={56} className="text-primary-600 animate-pulse" />
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+                <div className="text-center space-y-6">
+                    <BrainCircuit className="w-16 h-16 text-primary-400 mx-auto animate-pulse" />
+                    <div>
+                        <h2 className="text-2xl font-bold">Analyzing your responses...</h2>
+                        <p className="text-slate-400 mt-2 text-sm">Our AI is generating your personalized mental health report.</p>
                     </div>
-                </div>
-                <h2 className="text-3xl md:text-4xl font-black text-slate-900 italic tracking-tighter mb-4">Generating Analysis...</h2>
-                <div className="flex items-center gap-3">
-                    <div className="flex gap-1.5">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+                    <div className="flex justify-center gap-2">
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
                         ))}
                     </div>
                 </div>
@@ -71,10 +69,10 @@ export default function ReportPage() {
     }
 
     const riskBg = {
-        emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-emerald-100/50',
-        amber: 'bg-amber-50 border-amber-200 text-amber-700 shadow-amber-100/50',
-        orange: 'bg-orange-50 border-orange-200 text-orange-700 shadow-orange-100/50',
-        red: 'bg-red-50 border-red-200 text-red-700 shadow-red-100/50',
+        emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+        amber: 'bg-amber-50 border-amber-200 text-amber-700',
+        orange: 'bg-orange-50 border-orange-200 text-orange-700',
+        red: 'bg-red-50 border-red-200 text-red-700',
     }[result.riskColor];
 
     const stressBg = {
@@ -85,85 +83,74 @@ export default function ReportPage() {
     }[result.stressColor];
 
     return (
-        <div className="min-h-screen bg-slate-50 py-16 px-4 md:px-8 selection:bg-primary-100 print:bg-white print:py-0">
-            <div className="max-w-4xl mx-auto space-y-12">
+        <div className="min-h-screen bg-slate-50 py-12 px-4">
+            <div className="max-w-3xl mx-auto space-y-8">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div className="flex items-center gap-6 group">
-                        <div className="w-20 h-20 rounded-[2rem] bg-white text-primary-600 flex items-center justify-center shadow-xl border border-slate-100 group-hover:rotate-6 transition-transform">
-                            <BrainCircuit size={40} />
-                        </div>
-                        <div className="text-center md:text-left">
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic mb-1 uppercase">Mental Analysis</h1>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Captured on {new Date().toLocaleDateString('en-US', { dateStyle: 'long' })}</p>
-                        </div>
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 mb-4">
+                        <BrainCircuit className="w-8 h-8 text-primary-600" />
                     </div>
-                    <button onClick={() => window.print()} className="print:hidden px-8 py-4 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase text-slate-600 hover:text-primary-600 hover:border-primary-200 transition-all flex items-center gap-3 shadow-sm">
-                        <Download size={16} /> Download Report
-                    </button>
+                    <h1 className="text-3xl font-extrabold text-slate-900">Your Mental Health Report</h1>
+                    <p className="text-slate-500 mt-2 text-sm">Generated on {new Date().toLocaleDateString('en-US', { dateStyle: 'long' })}</p>
                 </div>
 
                 {/* Risk & Stress Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Risk Level */}
-                    <div className={`rounded-[3rem] p-10 border shadow-2xl flex flex-col justify-center ${riskBg}`}>
-                        <div className="flex items-center gap-3 mb-8 pb-4 border-b border-black/5">
-                            <AlertTriangle className="w-5 h-5 opacity-50" />
-                            <h3 className="font-black text-[10px] uppercase tracking-[0.3em] opacity-60">Neural Risk Threshold</h3>
+                    <div className={`rounded-2xl p-6 border-2 ${riskBg}`}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <AlertTriangle className="w-6 h-6" />
+                            <h3 className="font-bold text-lg">Risk Level</h3>
                         </div>
-                        <p className="text-6xl font-black italic tracking-tighter mb-2">{result.riskLevel}</p>
-                        <p className="text-[11px] font-bold opacity-70 uppercase tracking-wider">Calibration based on {Object.keys(answers).length} probe vectors.</p>
+                        <p className="text-4xl font-extrabold">{result.riskLevel}</p>
+                        <p className="text-sm mt-1 opacity-75">Based on your questionnaire responses and emotional analysis.</p>
                     </div>
 
                     {/* Stress Level */}
-                    <div className="glass-card rounded-[3rem] p-10 flex flex-col justify-center">
-                        <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
-                            <Activity className="w-5 h-5 text-primary-600 opacity-50" />
-                            <h3 className="font-black text-[10px] uppercase tracking-[0.3em] text-slate-400">Stress Intensity Gauge</h3>
+                    <div className="rounded-2xl p-6 border-2 bg-white border-slate-100 shadow-sm">
+                        <div className="flex items-center gap-3 mb-3 text-slate-700">
+                            <Activity className="w-6 h-6" />
+                            <h3 className="font-bold text-lg">Stress Level</h3>
                         </div>
-                        <div className="flex justify-between items-end mb-6">
-                            <span className="text-4xl font-black text-slate-900 italic tracking-tighter">{result.score}%</span>
-                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Sink: {emotion}</span>
-                        </div>
-                        <div className="w-full bg-slate-100 rounded-full h-8 p-1.5 border border-slate-200/50 flex items-center">
+                        <div className="w-full bg-slate-100 rounded-full h-4 mb-2">
                             <div
-                                className={`h-full rounded-full transition-all duration-[2000ms] shadow-lg ${stressBg}`}
+                                className={`h-4 rounded-full transition-all duration-1000 ${stressBg}`}
                                 style={{ width: `${result.score}%` }}
                             />
+                        </div>
+                        <div className="flex justify-between text-sm text-slate-500">
+                            <span>{result.stressLabel} ({result.score}%)</span>
+                            <span>Detected emotion: <strong>{emotion}</strong></span>
                         </div>
                     </div>
                 </div>
 
                 {/* Summary */}
-                <div className="glass-card rounded-[3rem] p-10 mt-8 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
-                        <CheckCircle className="w-40 h-40 text-primary-600" />
-                    </div>
-                    <h3 className="font-black text-[10px] uppercase tracking-[0.4em] text-slate-400 mb-10 flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-primary-600" /> Assessment Trace
+                <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                    <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-primary-600" /> Assessment Summary
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ul className="space-y-3">
                         {Object.entries(answers).map(([qId, answer], i) => (
-                            <div key={qId} className="flex justify-between items-center py-4 px-6 rounded-2xl bg-slate-50 border border-slate-100/50 text-[11px] font-bold">
-                                <span className="text-slate-400 uppercase tracking-widest leading-none">Probe {i + 1}</span>
-                                <span className="text-slate-900 italic">{answer}</span>
-                            </div>
+                            <li key={qId} className="flex justify-between py-2 border-b border-slate-50 text-sm">
+                                <span className="text-slate-500">Q{i + 1}</span>
+                                <span className="font-medium text-slate-800">{answer}</span>
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 </div>
 
                 {/* Wellness Tips */}
-                <div className="bg-gradient-to-br from-primary-600 to-indigo-700 rounded-[3.5rem] p-12 text-white relative overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none font-black text-8xl italic">TIPS</div>
-                    <h3 className="font-black text-[10px] uppercase tracking-[0.4em] text-primary-200 mb-10">Neural Optimization Directives</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-primary-50 to-emerald-50 rounded-2xl p-6 border border-primary-100">
+                    <h3 className="font-bold text-lg text-slate-900 mb-4">Mental Wellness Tips</h3>
+                    <ul className="space-y-3">
                         {tips.map((tip, i) => (
-                            <div key={i} className="flex items-start gap-4 p-6 bg-white/10 rounded-[2rem] border border-white/10 hover:bg-white/20 transition-all group/tip">
-                                <span className="w-10 h-10 rounded-xl bg-white/10 text-white font-black flex items-center justify-center shrink-0 text-sm italic group-hover/tip:rotate-12 transition-transform">0{i + 1}</span>
-                                <p className="text-sm font-bold leading-relaxed italic">{tip}</p>
-                            </div>
+                            <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                                <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 font-bold flex items-center justify-center shrink-0 mt-0.5 text-xs">{i + 1}</span>
+                                {tip}
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 </div>
 
                 {/* Actions */}
