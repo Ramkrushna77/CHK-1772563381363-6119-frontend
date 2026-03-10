@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BrainCircuit, AlertTriangle, CheckCircle, Activity, ChevronRight, RotateCcw, MessageSquare } from 'lucide-react';
-import Chatbot from '../components/Chatbot';
+import { BrainCircuit, AlertTriangle, CheckCircle, Activity, ChevronRight, RotateCcw, MessageSquare, Bot, Circle } from 'lucide-react';
 
 // Simple scoring logic based on answers
 function analyzeResults(answers, emotion) {
@@ -170,33 +169,55 @@ export default function ReportPage() {
                     </button>
                 </div>
 
-                {/* AI Chat Suggestion */}
-                {(result.riskLevel === 'High' || result.riskLevel === 'Severe' || result.riskLevel === 'Moderate') && (
-                    <div className="bg-white border-2 border-primary-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center gap-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                        <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                            <MessageSquare className="w-8 h-8 text-primary-600" />
+                {/* Professional Assistant Suggestion */}
+                <div className="bg-white border-2 border-primary-100 rounded-3xl p-8 shadow-sm relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                        <BrainCircuit size={120} className="text-primary-600" />
+                    </div>
+
+                    <div className="flex flex-col md:flex-row items-start gap-8 relative z-10">
+                        <div className="w-20 h-20 rounded-2xl bg-primary-100 text-primary-600 flex items-center justify-center shrink-0 shadow-inner">
+                            <Bot size={40} />
                         </div>
-                        <div className="text-center md:text-left">
-                            <h4 className="font-bold text-slate-900">Need someone to talk to right now?</h4>
-                            <p className="text-sm text-slate-500 mt-1">Our AI Assistant is available 24/7 to provide support and listening.</p>
-                        </div>
-                        <div className="md:ml-auto">
+
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="px-3 py-1 bg-primary-50 text-primary-600 text-[11px] font-bold rounded-full uppercase tracking-widest border border-primary-100">
+                                    MindCare Assistant
+                                </span>
+                                <span className="flex items-center gap-1.5 text-[11px] text-emerald-500 font-bold uppercase tracking-widest">
+                                    <Circle size={6} className="fill-emerald-500" /> Online
+                                </span>
+                            </div>
+
+                            <h4 className="text-2xl font-bold text-slate-900 mb-4">My Personal Advice for You</h4>
+
+                            <div className="space-y-4 text-slate-700 leading-relaxed mb-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 italic">
+                                {result.riskLevel === 'Severe' || result.riskLevel === 'High' ? (
+                                    <p>"I can see you're going through a very difficult time. It's important to remember that you don't have to carry this alone. I'm here to listen right now, and I highly recommend speaking with one of our specialized professionals who can offer the deep Support you deserve."</p>
+                                ) : result.riskLevel === 'Moderate' ? (
+                                    <p>"You've been under a fair amount of pressure lately. Let's work together on some grounding exercises and stress management techniques. Talking through these feelings can prevent them from becoming overwhelming."</p>
+                                ) : (
+                                    <p>"It's great to see you're in a relatively stable place! Maintaining this wellbeing requires consistent self-care. I'd love to help you build a daily mindfulness routine to keep your mind healthy and resilient."</p>
+                                )}
+                            </div>
+
                             <button
-                                onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                                className="bg-primary-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-700 transition-colors shadow-sm"
+                                onClick={() => navigate('/chatbot')}
+                                className="w-full md:w-auto bg-primary-600 text-white px-10 py-4 rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3 group"
                             >
-                                Start AI Chat
+                                <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
+                                Start a Conversation with Me
                             </button>
                         </div>
                     </div>
-                )}
+                </div>
 
                 {/* Disclaimer */}
                 <p className="text-center text-xs text-slate-400">
                     ⚠️ This report is for informational purposes only and is not a substitute for professional medical diagnosis or treatment.
                 </p>
             </div>
-            <Chatbot />
         </div>
     );
 }
