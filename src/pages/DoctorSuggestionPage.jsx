@@ -1,12 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { UserCheck, CheckCircle, ArrowLeft, PhoneCall, Calendar, Heart, ShieldCheck, BrainCircuit, Sparkles, Activity } from 'lucide-react';
+import { UserCheck, CheckCircle, ArrowLeft, PhoneCall, Calendar, Heart } from 'lucide-react';
 
 const SUGGESTIONS = {
     Low: {
         specialist: 'General Wellness Counselor',
-        urgency: 'Routine Calibration',
+        urgency: 'Routine',
         urgencyColor: 'emerald',
-        message: 'Neural metrics indicate optimal balance. Recommended focus: Maintenance and prophylactic wellness.',
+        message: 'Your mental health looks good! Regular self-care and mindfulness practices will help you maintain this balance.',
         actions: [
             'Practice daily mindfulness or meditation (10–15 min)',
             'Maintain a regular sleep schedule (7–9 hours)',
@@ -21,10 +21,10 @@ const SUGGESTIONS = {
         ],
     },
     Moderate: {
-        specialist: 'Licensed Clinical Therapist',
-        urgency: 'Scheduled Sync',
+        specialist: 'Licensed Counselor or Therapist',
+        urgency: 'Within a Month',
         urgencyColor: 'amber',
-        message: 'Mild to moderate neural drag detected. External counseling synthesis is advised for optimization.',
+        message: 'You are experiencing mild to moderate stress. Speaking with a counselor can help you develop better coping strategies.',
         actions: [
             'Schedule an appointment with a therapist or counselor',
             'Practice progressive muscle relaxation exercises',
@@ -39,10 +39,10 @@ const SUGGESTIONS = {
         ],
     },
     High: {
-        specialist: 'Clinical Psychiatrist',
-        urgency: 'Priority Intervention',
+        specialist: 'Psychiatrist or Clinical Psychologist',
+        urgency: 'Within a Week',
         urgencyColor: 'orange',
-        message: 'Elevated stress vectors and risk indicators observed. Immediate clinical consultation required.',
+        message: 'Your assessment indicates elevated stress and risk. Please seek professional help promptly.',
         actions: [
             'Book an appointment with a psychiatrist or psychologist this week',
             'Inform a trusted family member or friend about your feelings',
@@ -57,10 +57,10 @@ const SUGGESTIONS = {
         ],
     },
     Severe: {
-        specialist: 'Urgent Psychiatric Intake',
-        urgency: 'Critical Sync (Immediate)',
+        specialist: 'Psychiatrist (Urgent Consultation)',
+        urgency: 'Immediate',
         urgencyColor: 'red',
-        message: 'High-distress state detected. Immediate emergency clinical verification is MANDATORY. You are not alone.',
+        message: 'Your results indicate a high level of distress. Please seek professional medical help immediately. You are not alone.',
         actions: [
             '🚨 Contact a trusted person immediately',
             'Call a mental health helpline: iCall (India): 9152987821',
@@ -83,126 +83,100 @@ export default function DoctorSuggestionPage() {
     const suggestion = SUGGESTIONS[riskLevel] || SUGGESTIONS.Moderate;
 
     const urgencyBg = {
-        emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-        amber: 'bg-amber-50 text-amber-600 border-amber-100',
-        orange: 'bg-orange-50 text-orange-600 border-orange-100',
-        red: 'bg-red-50 text-red-600 border-red-100',
+        emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        amber: 'bg-amber-100 text-amber-700 border-amber-200',
+        orange: 'bg-orange-100 text-orange-700 border-orange-200',
+        red: 'bg-red-100 text-red-700 border-red-200',
     }[suggestion.urgencyColor];
 
     return (
-        <div className="min-h-screen bg-slate-50 relative selection:bg-primary-100 italic-text-none overflow-x-hidden py-24 px-4">
-            {/* Ambient Premium Glows */}
-            <div className="fixed top-[-10%] right-[-10%] w-[800px] h-[800px] bg-primary-100/10 rounded-full blur-[150px] pointer-events-none"></div>
-            <div className="fixed bottom-[-10%] left-[-10%] w-[800px] h-[800px] bg-emerald-100/10 rounded-full blur-[150px] pointer-events-none"></div>
+        <div className="min-h-screen bg-slate-50 py-12 px-4">
+            <div className="max-w-3xl mx-auto space-y-8">
 
-            <div className="max-w-4xl mx-auto relative z-10">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="group mb-12 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-primary-600 transition-all active:scale-95"
-                >
-                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors shadow-sm">
-                        <ArrowLeft size={16} />
+                {/* Header */}
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 mb-4">
+                        <UserCheck className="w-8 h-8 text-primary-600" />
                     </div>
-                    Return to Trace
-                </button>
-
-                <div className="text-center mb-16">
-                    <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-slate-100 shadow-sm text-primary-600 text-[10px] font-black uppercase tracking-[0.2em] mb-8">
-                        <ShieldCheck className="h-4 w-4" />
-                        <span>Clinical Directive Vector</span>
-                    </div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter italic mb-4 uppercase">Optimization Protocol</h1>
-                    <p className="text-slate-500 max-w-lg mx-auto font-medium leading-relaxed italic">Strategic clinical recommendations based on your neural telemetry.</p>
+                    <h1 className="text-3xl font-extrabold text-slate-900">Doctor Suggestions</h1>
+                    <p className="text-slate-500 mt-2 text-sm">Personalized recommendations based on your assessment results.</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    {/* Main Recommendation */}
-                    <div className="lg:col-span-12">
-                        <div className="glass-panel rounded-[4rem] p-10 md:p-16 shadow-2xl relative overflow-hidden border-none bg-white/70 premium-glow">
-                            <div className="flex flex-col md:flex-row gap-12 items-start">
-                                <div className="shrink-0 relative">
-                                    <div className="w-32 h-32 rounded-[2.5rem] bg-primary-600 flex items-center justify-center shadow-2xl rotate-3 group-hover:-rotate-3 transition-transform duration-500">
-                                        <UserCheck className="w-16 h-16 text-white" />
-                                    </div>
-                                    <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-white border-4 border-slate-50 flex items-center justify-center shadow-lg">
-                                        <Sparkles className="w-6 h-6 text-primary-600" />
-                                    </div>
-                                </div>
-                                <div className="space-y-6 flex-1">
-                                    <div className="space-y-2">
-                                        <div className={`inline-flex px-4 py-1.5 rounded-xl border font-black text-[10px] uppercase tracking-widest ${urgencyBg}`}>
-                                            {suggestion.urgency}
-                                        </div>
-                                        <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter italic">{suggestion.specialist}</h2>
-                                    </div>
-                                    <p className="text-lg md:text-xl text-slate-600 font-bold italic leading-relaxed leading-[1.1]">
-                                        "{suggestion.message}"
-                                    </p>
-                                    <div className="flex flex-wrap gap-4 pt-4">
-                                        <button className="flex-1 min-w-[200px] bg-slate-900 text-white px-8 py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] hover:bg-black transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 italic">
-                                            <Calendar size={18} /> Schedule Sync
-                                        </button>
-                                        <button className="flex-1 min-w-[200px] bg-white border-2 border-slate-100 text-slate-900 px-8 py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] hover:border-primary-600 hover:text-primary-600 transition-all shadow-sm active:scale-95 flex items-center justify-center gap-3 italic">
-                                            <PhoneCall size={18} /> Direct Link
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                {/* Specialist Card */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <p className="text-sm text-slate-500 mb-1">Recommended Specialist</p>
+                            <h2 className="text-xl font-bold text-slate-900">{suggestion.specialist}</h2>
+                            <p className="text-slate-600 mt-2 text-sm">{suggestion.message}</p>
                         </div>
-                    </div>
-
-                    {/* Action Items */}
-                    <div className="lg:col-span-7">
-                        <div className="glass-panel rounded-[3rem] p-10 md:p-12 shadow-xl border-none bg-white/60">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-10 flex items-center gap-4 italic">
-                                <Activity className="w-5 h-5 text-primary-600" /> Immediate Protocols
-                            </h3>
-                            <div className="space-y-4">
-                                {suggestion.actions.map((action, i) => (
-                                    <div key={i} className="flex items-start gap-5 p-6 rounded-3xl bg-white border border-slate-50 hover:border-primary-100 transition-all group shadow-sm">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-black text-xs flex items-center justify-center group-hover:bg-primary-600 group-hover:text-white transition-all shrink-0">
-                                            0{i + 1}
-                                        </div>
-                                        <p className="text-sm font-bold text-slate-700 leading-relaxed italic">{action}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Wellness Synthesis */}
-                    <div className="lg:col-span-5">
-                        <div className="bg-gradient-to-br from-indigo-900 to-primary-800 rounded-[3rem] p-10 md:p-12 shadow-2xl h-full text-white relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
-                                <Heart size={140} />
-                            </div>
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary-300 mb-10 flex items-center gap-4 italic relative z-10">
-                                <Sparkles className="w-5 h-5" /> Synthesis Directives
-                            </h3>
-                            <div className="space-y-8 relative z-10">
-                                {suggestion.tips.map((tip, i) => (
-                                    <div key={i} className="flex items-start gap-4 group/tip">
-                                        <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-1 opacity-60 group-hover/tip:opacity-100 transition-opacity" />
-                                        <p className="text-sm font-bold leading-relaxed italic text-primary-50/80 group-hover/tip:text-white transition-colors">
-                                            {tip}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="mt-20 pt-10 border-t border-white/10 relative z-10">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center p-3">
-                                        <BrainCircuit className="w-full h-full text-primary-200" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-300">Sync Status</p>
-                                        <p className="font-bold text-white italic">Localized Matrix Active</p>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border shrink-0 ${urgencyBg}`}>
+                            <Calendar className="w-4 h-4" />
+                            {suggestion.urgency}
                         </div>
                     </div>
                 </div>
+
+                {/* Recommended Actions */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                    <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-primary-600" /> Recommended Actions
+                    </h3>
+                    <ul className="space-y-3">
+                        {suggestion.actions.map((action, i) => (
+                            <li key={i} className="flex items-start gap-3 text-sm text-slate-700 p-3 bg-slate-50 rounded-xl">
+                                <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 font-bold flex items-center justify-center shrink-0 text-xs">{i + 1}</span>
+                                {action}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Wellness Tips */}
+                <div className="bg-gradient-to-br from-emerald-50 to-primary-50 rounded-2xl p-6 border border-emerald-100">
+                    <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                        <Heart className="w-5 h-5 text-emerald-600" /> Mental Wellness Tips
+                    </h3>
+                    <ul className="space-y-3">
+                        {suggestion.tips.map((tip, i) => (
+                            <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
+                                <span className="text-emerald-500 mt-0.5">✦</span> {tip}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Emergency */}
+                {(riskLevel === 'High' || riskLevel === 'Severe') && (
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-4">
+                        <PhoneCall className="w-6 h-6 text-red-600 shrink-0 mt-1" />
+                        <div>
+                            <p className="font-semibold text-red-700">Emergency Resources</p>
+                            <p className="text-sm text-red-600 mt-1">iCall (India): <strong>9152987821</strong> | Vandrevala Foundation: <strong>1860-2662-345</strong></p>
+                            <p className="text-xs text-red-500 mt-1">Available 24/7. Help is always just a call away.</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="flex-1 flex justify-center items-center gap-2 py-4 px-6 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-md transition-colors"
+                    >
+                        Go to Dashboard
+                    </button>
+                    <button
+                        onClick={() => navigate('/report', { state: location.state })}
+                        className="flex items-center justify-center gap-2 py-4 px-6 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-colors shadow-sm"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> View Report
+                    </button>
+                </div>
+
+                <p className="text-center text-xs text-slate-400">
+                    ⚠️ This is for informational purposes only and does not replace professional medical advice.
+                </p>
             </div>
         </div>
     );
