@@ -1,8 +1,17 @@
-# React + Vite
+# 🧠 MindPulse
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+MindPulse is an AI-driven mental health platform built for our hackathon. It identifies early signs of stress, anxiety, and depression by analyzing user behavior and provides immediate support through an intelligent chatbot.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
+
+* **Behavioral Analysis:** Analyzes facial expressions, speech emotions, and chat text sentiment.
+* **Smart AI Chatbot:** Uses RAG (Retrieval-Augmented Generation) to give safe, reliable mental health guidance.
+* **Secure Login:** Fast and safe user authentication using Firebase.
+* **Risk Dashboard:** Displays estimated mental health risk levels based on ML analysis.
+  
+## 🛠️ Tech Stack
+
+* **Frontend:** React.js
+* **Backend & Auth:** Firebase (Authentication & Database)
+* **AI Engine:** Machine Learning models & RAG Architecture
